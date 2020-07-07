@@ -147,9 +147,14 @@ void genSocketDescriptor(int pid, int descriptor, QueryData& results) {
   if (si.psi.soi_family == AF_INET || si.psi.soi_family == AF_INET6) {
     Row r;
 
+    // sqlite is signed 64bit, but soi_so is unsigned. If it's above
+    // LLONG_MAX, may as well drop it. That's all we did prior.
+    if (si.psi.soi_so <= LLONG_MAX) {
+      r["socket"] = BIGINT(si.psi.soi_so);
+    }
+
     r["pid"] = INTEGER(pid);
     r["fd"] = BIGINT(descriptor);
-    r["socket"] = BIGINT(si.psi.soi_so);
     r["path"] = "";
 
     // Darwin/OSX SOCKINFO_TCP is not IPPROTO_TCP
