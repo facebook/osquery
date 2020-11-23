@@ -19,6 +19,31 @@ class SemanticVersion {
   unsigned major = 0;
   unsigned minor = 0;
   unsigned patches = 0;
+  unsigned build = 0;
+
+ public:
+  int compare(const SemanticVersion&);
+  bool eq(const SemanticVersion&);
+
+ public:
+  bool operator==(const SemanticVersion& other) {
+    return eq(other);
+  }
+  bool operator!=(const SemanticVersion& other) {
+    return !eq(other);
+  }
+  bool operator>(const SemanticVersion& other) {
+    return compare(other) > 0;
+  }
+  bool operator<(const SemanticVersion& other) {
+    return compare(other) < 0;
+  }
+  bool operator>=(const SemanticVersion& other) {
+    return compare(other) >= 0;
+  }
+  bool operator<=(const SemanticVersion& other) {
+    return compare(other) <= 0;
+  }
 
  public:
   static constexpr auto separator = '.';

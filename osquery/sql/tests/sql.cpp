@@ -422,4 +422,80 @@ TEST_F(SQLTests, test_sql_ssdeep_compare) {
   EXPECT_EQ(d[0]["test_int"], "68");
 }
 #endif
+
+TEST_F(SQLTests, test_version_collate) {
+  QueryData d;
+  auto status = query("create temp table test_version(v string);", d);
+  ASSERT_TRUE(status.ok());
+
+  status = query("insert into 'test_version' values('1');", d);
+  ASSERT_TRUE(status.ok());
+
+  status = query("insert into 'test_version' values('1.2.0');", d);
+  ASSERT_TRUE(status.ok());
+
+  status = query("insert into 'test_version' values('1.11.0');", d);
+  ASSERT_TRUE(status.ok());
+
+  status = query("select * from test_version ORDER BY v;", d);
+  ASSERT_TRUE(status.ok());
+  ASSERT_EQ(d.size(), 3U);
+  EXPECT_EQ(d[0]["v"], "1");
+  EXPECT_EQ(d[1]["v"], "1.11.0");
+  EXPECT_EQ(d[2]["v"], "1.2.0");
+
+  status = query("select * from test_version ORDER BY v COLLATE VERSION;", d);
+  ASSERT_TRUE(status.ok());
+  ASSERT_EQ(d.size(), 3U);
+  EXPECT_EQ(d[0]["v"], "1");
+  EXPECT_EQ(d[1]["v"], "1.2.0");
+  EXPECT_EQ(d[2]["v"], "1.11.0");
+}
+
+TEST_F(SQLTests, test_version_collate_in_table) {
+  QueryData d;
+  auto status =
+      query("create temp table test_version_2(v string COLLATE VERSION);", d);
+  ASSERT_TRUE(status.ok());
+
+  status = query("insert into 'test_version_2' values('2');", d);
+  ASSERT_TRUE(status.ok());
+
+  status = query("insert into 'test_version_2' values('2.11.0');", d);
+  ASSERT_TRUE(status.ok());
+
+  status = query("insert into 'test_version_2' values('2.2.0');", d);
+  ASSERT_TRUE(status.ok());
+
+  status = query("select * from test_version_2 ORDER BY v;", d);
+  ASSERT_TRUE(status.ok());
+  ASSERT_EQ(d.size(), 3U);
+  EXPECT_EQ(d[0]["v"], "2");
+  EXPECT_EQ(d[1]["v"], "2.2.0");
+  EXPECT_EQ(d[2]["v"], "2.11.0");
+}
+
+TEST_F(SQLTests, test_version_comparisons) {
+  QueryData d;
+
+  auto status =
+      query("select '2.1.1.1' > '1.1.1.1' COLLATE VERSION as test;", d);
+  ASSERT_TRUE(status.ok());
+  ASSERT_EQ(d.size(), 1U);
+  EXPECT_EQ(d[0]["test"], "1");
+
+  status = query("select '2.11.1.1' > '2.2.1.1' COLLATE VERSION as test;", d);
+  ASSERT_TRUE(status.ok());
+  ASSERT_EQ(d.size(), 1U);
+  EXPECT_EQ(d[0]["test"], "1");
+
+  status = query(
+      "select '0.5.5-22-g85b16ae' > '0.5.5-3-ga7b9229' COLLATE VERSION as "
+      "test;",
+      d);
+  ASSERT_TRUE(status.ok());
+  ASSERT_EQ(d.size(), 1U);
+  EXPECT_EQ(d[0]["test"], "1");
+}
+
 } // namespace osquery

@@ -24,6 +24,7 @@ function(generateOsquerySql)
     sqlite_math.cpp
     sqlite_operations.cpp
     sqlite_util.cpp
+    sqlite_version.cpp
     virtual_sqlite_table.cpp
     virtual_table.cpp
   )
@@ -48,7 +49,9 @@ function(generateOsquerySql)
     osquery_hashing
     osquery_process
     osquery_utils
+    osquery_utils_conversions
     osquery_utils_system_errno
+    osquery_utils_versioning_semantic
     thirdparty_boost
     thirdparty_googletest_headers
     thirdparty_sqlite
