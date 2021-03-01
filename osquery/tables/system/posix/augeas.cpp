@@ -153,6 +153,20 @@ class AugeasHandle {
 
 static AugeasHandle kAugeasHandle;
 
+// Augeas presents data as a slash seperated tree. It uses `/*` as a
+// single level wildcard, and `//*` as a recursive wildcard. However,
+// sqlite uses % as a wildcard. To allow for LIKE expressions, we need
+// to convert.
+void convertWildcards(std::string& str) {
+  size_t pos;
+  while ((pos = str.find("%%")) != std::string::npos) {
+    str.replace(pos, 2, "/*");
+  }
+  while ((pos = str.find("%")) != std::string::npos) {
+    str.replace(pos, 1, "*");
+  }
+}
+
 QueryData genAugeas(QueryContext& context) {
   // Strategy for handling augeas
   // (As informed by forensic examination of the underlying code)
@@ -202,12 +216,27 @@ QueryData genAugeas(QueryContext& context) {
     patterns.insert(nodes.begin(), nodes.end());
   }
 
+  if (context.hasConstraint("node", LIKE)) {
+    auto nodes = context.constraints["node"].getAll(LIKE);
+    for (std::string node : nodes) {
+      if (node.empty()) {
+        continue;
+      }
+      convertWildcards(node);
+      patterns.insert(node);
+    }
+  }
+
   if (context.hasConstraint("path", EQUALS)) {
     // Allow requests via filesystem path.
     auto paths = context.constraints["path"].getAll(EQUALS);
     std::ostringstream pattern;
 
     for (const auto& path : paths) {
+      if (path.empty()) {
+        continue;
+      }
+
       pattern << "/files" << path;
       patterns.insert(pattern.str());
 
@@ -216,6 +245,36 @@ QueryData genAugeas(QueryContext& context) {
 
       pattern << "/files" << path << "//*";
       patterns.insert(pattern.str());
+
+      pattern.clear();
+      pattern.str(std::string());
+    }
+  }
+
+  // This LIKE strategy only works because we've loaded the entire
+  // augeas system. If we ever move to loading by explicit files, this
+  // will break.
+  if (context.hasConstraint("path", LIKE)) {
+    auto paths = context.constraints["path"].getAll(LIKE);
+    std::ostringstream pattern;
+
+    for (std::string path : paths) {
+      if (path.empty()) {
+        continue;
+      }
+
+      convertWildcards(path);
+
+      pattern << "/files" << path;
+      patterns.insert(pattern.str());
+
+      pattern.clear();
+      pattern.str(std::string());
+
+      if (!strncmp(&path.back(), "*", 1)) {
+        pattern << "/files" << path << "//*";
+        patterns.insert(pattern.str());
+      }
 
       pattern.clear();
       pattern.str(std::string());
