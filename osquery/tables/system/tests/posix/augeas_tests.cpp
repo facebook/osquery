@@ -87,5 +87,56 @@ TEST_F(AugeasTests, select_hosts_by_node) {
       << "Value is not empty. Got " << results.rows()[0].at("value")
       << "instead";
 }
+
+TEST_F(AugeasTests, select_augeas_load) {
+  auto results = SQL("select * from augeas where node = '/augeas/load'");
+  ASSERT_EQ(results.rows().size(), 1U);
+  ASSERT_EQ(results.rows()[0].at("node"), "/augeas/load");
+  ASSERT_EQ(results.rows()[0].at("label"), "load");
+  ASSERT_TRUE(results.rows()[0].at("path").empty());
+  ASSERT_TRUE(results.rows()[0].at("value").empty());
+}
+
+TEST_F(AugeasTests, select_augeas_load_wildcards) {
+  // Exact matches, should be 1 result
+  ASSERT_EQ(
+      SQL("select * from augeas where node LIKE '/augeas/load'").rows().size(),
+      1U);
+  ASSERT_EQ(SQL("select * from augeas where node LIKE '/%/load'").rows().size(),
+            1U);
+
+  // Single recurse, about 200 results
+  ASSERT_GT(SQL("select * from augeas where node LIKE '/augeas/load/%'")
+                .rows()
+                .size(),
+            100U);
+
+  // full recuse, about 1500 results
+  ASSERT_GT(SQL("select * from augeas where node LIKE '/augeas/load/%%'")
+                .rows()
+                .size(),
+            1000U);
+}
+
+TEST_F(AugeasTests, select_file_wildcards) {
+  // These are a bit funny. Augeas doesn't do partial matches,
+  // and because file is a real file, you have to be carefuly
+  // with trailing slashes.
+  ASSERT_EQ(
+      SQL("select * from augeas where path LIKE '/etc/hosts/%'").rows().size(),
+      0U);
+  ASSERT_EQ(
+      SQL("select * from augeas where path LIKE '/etc/hosts%'").rows().size(),
+      0U);
+  ASSERT_GE(
+      SQL("select * from augeas where path LIKE '/etc/hosts'").rows().size(),
+      1U);
+  ASSERT_GE(
+      SQL("select * from augeas where path LIKE '/etc/hosts%%'").rows().size(),
+      1U);
+  ASSERT_GE(
+      SQL("select * from augeas where path LIKE '/%/hosts'").rows().size(), 1U);
+}
+
 } // namespace tables
 } // namespace osquery
