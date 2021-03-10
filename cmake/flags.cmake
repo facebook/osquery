@@ -257,6 +257,23 @@ function(setupBuildFlags)
       target_link_options(c_settings INTERFACE
         -fsanitize=address
       )
+    elseif(OSQUERY_ENABLE_THREAD_SANITIZER)
+      target_compile_options(cxx_settings INTERFACE
+        -fsanitize=thread
+        -g
+      )
+      target_compile_options(c_settings INTERFACE
+        -fsanitize=thread
+        -g
+      )
+
+      # Require at least address (may be refactored out)
+      target_link_options(cxx_settings INTERFACE
+        -fsanitize=thread
+      )
+      target_link_options(c_settings INTERFACE
+        -fsanitize=thread
+      )
     endif()
   elseif(DEFINED PLATFORM_WINDOWS)
 
