@@ -1,0 +1,26 @@
+{
+  "table_name": "libcurl_events",
+  "path": "/lib/x86_64-linux-gnu/libcurl.so.4",
+  "function_name": "curl_easy_setopt",
+  "parameter_list": [
+    {
+      "name": "handle",
+      "type": "Integer",
+      "mode": "In",
+      "size": "8"
+    },
+
+    {
+      "name": "option",
+      "type": "Integer",
+      "mode": "In",
+      "size": "8"
+    },
+
+    {
+      "name": "value",
+      "type": "String",
+      "mode": "In"
+    }
+  ]
+}
