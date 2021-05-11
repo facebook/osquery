@@ -71,9 +71,10 @@ option(OSQUERY_NO_DEBUG_SYMBOLS "Whether to build without debug symbols or not, 
 option(OSQUERY_BUILD_TESTS "Whether to enable and build tests or not")
 option(OSQUERY_BUILD_ROOT_TESTS "Whether to enable and build tests that require root access")
 
-if(DEFINED PLATFORM_LINUX)
+if(DEFINED PLATFORM_LINUX OR DEFINED PLATFORM_MACOS)
   option(OSQUERY_BUILD_FUZZERS "Whether to build fuzzing harnesses")
   option(OSQUERY_ENABLE_ADDRESS_SANITIZER "Whether to enable Address Sanitizer")
+  option(OSQUERY_ENABLE_THREAD_SANITIZER "Whether to enable Thread Sanitizer")
   # This is required for Boost coroutines/context to be built in a way that are compatible to Valgrind
   option(OSQUERY_ENABLE_VALGRIND_SUPPORT "Whether to enable support for osquery to be run under Valgrind")
 

@@ -260,11 +260,9 @@ function(setupBuildFlags)
     elseif(OSQUERY_ENABLE_THREAD_SANITIZER)
       target_compile_options(cxx_settings INTERFACE
         -fsanitize=thread
-        -g
       )
       target_compile_options(c_settings INTERFACE
         -fsanitize=thread
-        -g
       )
 
       # Require at least address (may be refactored out)
