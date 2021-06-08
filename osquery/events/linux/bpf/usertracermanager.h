@@ -15,6 +15,7 @@
 #include <ebpfpub/ifunctiontracer.h>
 #include <ebpfpub/iperfeventreader.h>
 
+#include <unordered_map>
 #include <vector>
 
 namespace osquery {
@@ -42,6 +43,22 @@ class UserTracerManager final
 
   struct PrivateData;
   std::unique_ptr<PrivateData> d;
+
+ public:
+  using Configuration = std::unordered_map<std::string, std::string>;
+
+  struct TracerState final {
+    std::string config_path;
+    std::string config_contents;
+    osquery::UserTracer::Ptr tracer;
+  };
+
+  using TracerStateList = std::vector<TracerState>;
+
+  static Configuration loadConfiguration();
+
+  static void applyConfiguration(TracerStateList& tracer_state_list,
+                                 const Configuration& new_config);
 };
 
 } // namespace osquery

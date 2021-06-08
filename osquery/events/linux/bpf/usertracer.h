@@ -38,7 +38,7 @@ class UserTracer final : public TablePlugin {
   using Ptr = std::shared_ptr<UserTracer>;
   static Expected<Ptr, ErrorCode> create(const std::string& configuration);
 
-  ~UserTracer();
+  virtual ~UserTracer() override;
 
   const std::string& name() const;
   void processEvents();
