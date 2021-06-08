@@ -28,4 +28,9 @@ class ProcessContextFactoryTests : public testing::Test {
   virtual void SetUp() override{};
 };
 
+class UserTracerTests : public testing::Test {
+ protected:
+  virtual void SetUp() override{};
+};
+
 } // namespace osquery

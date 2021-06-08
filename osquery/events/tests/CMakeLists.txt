@@ -147,6 +147,7 @@ function(generateOsqueryEventsTestsBpftestsTest)
     linux/bpf/systemstatetracker.cpp
     linux/bpf/utils.cpp
     linux/bpf/utils.h
+    linux/bpf/usertracer.cpp
   )
 
   target_link_libraries(osquery_events_tests_bpftests-test PRIVATE

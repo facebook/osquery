@@ -53,7 +53,7 @@ Status UserTracerManager::setUp() {
 
     auto tracer_exp = UserTracer::create(tracer_config);
     if (tracer_exp.isError()) {
-      LOG(ERROR) << "Failed to create the user tracer:"
+      LOG(ERROR) << "Failed to create the user tracer: "
                  << tracer_exp.getError().getMessage();
       continue;
 

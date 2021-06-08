@@ -34,7 +34,7 @@ static const std::string kKprobeSyscallPrefix{"__x64_sys_"};
 } // namespace
 
 FLAG(uint64,
-     max_bpf_user_tracer_rows,
+     bpf_max_user_tracer_rows,
      1024ULL,
      "The maximum number of rows to store in memory");
 
@@ -94,12 +94,7 @@ void UserTracer::processEvents() {
           d->event_queue.insert({rel_timestamp, std::move(event)});
         }
 
-        if (d->event_queue.size() > FLAGS_max_bpf_user_tracer_rows) {
-          auto last_elem_it =
-              std::next(d->event_queue.begin(), FLAGS_max_bpf_user_tracer_rows);
-
-          d->event_queue.erase(d->event_queue.begin(), last_elem_it);
-        }
+        limitMapSize(d->event_queue, FLAGS_bpf_max_user_tracer_rows);
       });
 }
 
@@ -349,11 +344,11 @@ Expected<TableColumns, UserTracer::ErrorCode> UserTracer::generateTableSchema(
     const Configuration& configuration) {
   TableColumns column_list = {
       std::make_tuple("timestamp", TEXT_TYPE, ColumnOptions::DEFAULT),
-      std::make_tuple("thread_id", INTEGER_TYPE, ColumnOptions::DEFAULT),
-      std::make_tuple("process_id", INTEGER_TYPE, ColumnOptions::DEFAULT),
+      std::make_tuple("tid", INTEGER_TYPE, ColumnOptions::DEFAULT),
+      std::make_tuple("pid", INTEGER_TYPE, ColumnOptions::DEFAULT),
       std::make_tuple("uid", INTEGER_TYPE, ColumnOptions::DEFAULT),
       std::make_tuple("gid", INTEGER_TYPE, ColumnOptions::DEFAULT),
-      std::make_tuple("cgroup_id", INTEGER_TYPE, ColumnOptions::DEFAULT),
+      std::make_tuple("cid", INTEGER_TYPE, ColumnOptions::DEFAULT),
       std::make_tuple("exit_code", TEXT_TYPE, ColumnOptions::DEFAULT),
       std::make_tuple("probe_error", INTEGER_TYPE, ColumnOptions::DEFAULT),
       std::make_tuple("duration", INTEGER_TYPE, ColumnOptions::DEFAULT),
@@ -454,11 +449,11 @@ TableRows UserTracer::parseEvents(const EventQueue& event_queue) {
 
     auto row = make_table_row();
     row["timestamp"] = SQL_TEXT(std::to_string(event.header.timestamp));
-    row["thread_id"] = INTEGER(event.header.thread_id);
-    row["process_id"] = INTEGER(event.header.process_id);
+    row["tid"] = INTEGER(event.header.thread_id);
+    row["pid"] = INTEGER(event.header.process_id);
     row["uid"] = INTEGER(event.header.user_id);
     row["gid"] = INTEGER(event.header.group_id);
-    row["cgroup_id"] = INTEGER(event.header.cgroup_id);
+    row["cid"] = INTEGER(event.header.cgroup_id);
     row["exit_code"] = SQL_TEXT(std::to_string(event.header.exit_code));
     row["probe_error"] = INTEGER(event.header.probe_error);
     row["duration"] = INTEGER(event.header.duration);

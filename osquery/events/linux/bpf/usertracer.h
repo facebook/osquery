@@ -18,6 +18,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 
 namespace osquery {
 
@@ -77,6 +78,17 @@ class UserTracer final : public TablePlugin {
       std::map<std::uint64_t, tob::ebpfpub::IFunctionTracer::Event>;
 
   static TableRows parseEvents(const EventQueue& event_queue);
+
+  template <typename KeyType, typename ValueType>
+  static void limitMapSize(std::map<KeyType, ValueType>& map,
+                           std::size_t max_elem_count) {
+    if (map.size() <= max_elem_count) {
+      return;
+    }
+
+    auto it = std::next(map.begin(), map.size() - max_elem_count);
+    map.erase(map.begin(), it);
+  }
 };
 
 } // namespace osquery
