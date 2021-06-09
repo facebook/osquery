@@ -6,8 +6,8 @@ When running on a compatible Linux system, osquery can be configured to create s
 
 # Relevant flag options
 
- * **--disable_events**: Set to *true* to enable events
- * **--enable_bpf_user_tracers**: Set to *true* to enable user tracers
+ * **--disable_events**: Set to **false** to enable events
+ * **--enable_bpf_user_tracers**: Set to **true** to enable user tracers
  * **--bpf_max_user_tracer_rows**: Maximum amount of rows that each table should keep in memory
 
 # Configuration
