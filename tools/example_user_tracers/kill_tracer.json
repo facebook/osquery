@@ -6,13 +6,13 @@
       "name": "pid",
       "type": "Integer",
       "mode": "In",
-      "size": "8"
+      "size": 8
     },
     {
       "name": "signal",
       "type": "Integer",
       "mode": "In",
-      "size": "8"
+      "size": 8
     }
   ]
 }

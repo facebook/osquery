@@ -10,10 +10,8 @@
 #include <osquery/core/flags.h>
 #include <osquery/events/linux/bpf/usertracer.h>
 #include <osquery/logger/logger.h>
-#include <osquery/utils/conversions/tryto.h>
 #include <osquery/utils/mutex.h>
 
-#include <boost/property_tree/json_parser.hpp>
 #include <ebpfpub/ibufferstorage.h>
 #include <ebpfpub/ifunctiontracer.h>
 #include <tob/ebpf/perfeventarray.h>
@@ -39,7 +37,7 @@ FLAG(uint64,
      "The maximum number of rows to store in memory");
 
 struct UserTracer::PrivateData final {
-  Configuration configuration;
+  TracerConfiguration configuration;
   TableColumns table_schema;
 
   tob::ebpfpub::IBufferStorage::Ref buffer_storage;
@@ -51,9 +49,9 @@ struct UserTracer::PrivateData final {
 };
 
 Expected<UserTracer::Ptr, UserTracer::ErrorCode> UserTracer::create(
-    const std::string& configuration) {
+    const TracerConfiguration& configuration) {
   try {
-    return Ptr(new UserTracer(configuration));
+    return Ptr(new UserTracer(std::move(configuration)));
 
   } catch (const std::bad_alloc&) {
     return createError(ErrorCode::MemoryAllocationFailure);
@@ -98,20 +96,12 @@ void UserTracer::processEvents() {
       });
 }
 
-UserTracer::UserTracer(const std::string& configuration) : d(new PrivateData) {
-  auto config_exp = parseConfiguration(configuration);
-  if (config_exp.isError()) {
-    auto error = config_exp.takeError();
-    LOG(ERROR) << error.getMessage();
-
-    throw error.getErrorCode();
-  }
-
-  d->configuration = config_exp.take();
+UserTracer::UserTracer(TracerConfiguration configuration) : d(new PrivateData) {
+  d->configuration = std::move(configuration);
 
   auto table_schema_exp = generateTableSchema(d->configuration);
   if (table_schema_exp.isError()) {
-    auto error = config_exp.takeError();
+    auto error = table_schema_exp.takeError();
     LOG(ERROR) << error.getMessage();
 
     throw error.getErrorCode();
@@ -201,147 +191,8 @@ TableRows UserTracer::generate(QueryContext& context) {
   return parseEvents(event_queue);
 }
 
-Expected<UserTracer::Configuration, UserTracer::ErrorCode>
-UserTracer::parseConfiguration(const std::string& configuration) {
-  boost::property_tree::iptree json_data;
-
-  try {
-    std::stringstream json_stream;
-    json_stream << configuration;
-
-    boost::property_tree::read_json(json_stream, json_data);
-
-  } catch (const boost::property_tree::json_parser::json_parser_error&) {
-    return createError(ErrorCode::InvalidJSONConfiguration);
-  }
-
-  Configuration config;
-
-  auto opt_table_name = json_data.get_optional<std::string>("table_name");
-  if (!opt_table_name.has_value()) {
-    return createError(ErrorCode::InvalidConfigurationSyntax)
-           << "The 'table_name' entry is missing";
-  }
-
-  config.table_name = opt_table_name.value();
-
-  auto boost_opt_path = json_data.get_optional<std::string>("path");
-  if (boost_opt_path.has_value()) {
-    config.opt_image_path = boost_opt_path.value();
-  }
-
-  auto opt_function_name = json_data.get_optional<std::string>("function_name");
-  if (!opt_function_name.has_value()) {
-    return createError(ErrorCode::InvalidConfigurationSyntax)
-           << "The 'function_name' entry is missing";
-  }
-
-  config.function_name = opt_function_name.value();
-
-  auto opt_parameter_list = json_data.get_child_optional("parameter_list");
-  if (!opt_parameter_list.has_value()) {
-    return createError(ErrorCode::InvalidConfigurationSyntax)
-           << "The 'parameter_list' entry is missing";
-  }
-
-  const auto& parameter_list = opt_parameter_list.value();
-
-  for (const auto& parameter_list_p : parameter_list) {
-    const auto& parameter_obj = parameter_list_p.second;
-
-    auto opt_param_name = parameter_obj.get_optional<std::string>("name");
-    if (!opt_param_name.has_value()) {
-      return createError(ErrorCode::InvalidConfigurationSyntax)
-             << "Parameters need a 'name' entry";
-    }
-
-    auto opt_param_type = parameter_obj.get_optional<std::string>("type");
-    if (!opt_param_type.has_value()) {
-      return createError(ErrorCode::InvalidConfigurationSyntax)
-             << "Parameters need a 'type' entry";
-    }
-
-    auto opt_param_mode = parameter_obj.get_optional<std::string>("mode");
-    if (!opt_param_mode.has_value()) {
-      return createError(ErrorCode::InvalidConfigurationSyntax)
-             << "Parameters need a 'mode' entry";
-    }
-
-    tob::ebpfpub::IFunctionTracer::Parameter parameter;
-    parameter.name = opt_param_name.value();
-
-    const auto& param_mode = opt_param_mode.value();
-    if (param_mode == "In") {
-      parameter.mode = tob::ebpfpub::IFunctionTracer::Parameter::Mode::In;
-
-    } else if (param_mode == "Out") {
-      parameter.mode = tob::ebpfpub::IFunctionTracer::Parameter::Mode::Out;
-
-    } else if (param_mode == "InOut") {
-      parameter.mode = tob::ebpfpub::IFunctionTracer::Parameter::Mode::InOut;
-
-    } else {
-      return createError(ErrorCode::InvalidConfigurationSyntax)
-             << "Parameter '" << parameter.name
-             << "' does not have a valid 'mode' entry";
-    }
-
-    bool needs_value_size{false};
-
-    const auto& param_type = opt_param_type.value();
-    if (param_type == "Integer") {
-      parameter.type = tob::ebpfpub::IFunctionTracer::Parameter::Type::Integer;
-      needs_value_size = true;
-
-    } else if (param_type == "IntegerPtr") {
-      parameter.type =
-          tob::ebpfpub::IFunctionTracer::Parameter::Type::IntegerPtr;
-      needs_value_size = true;
-
-    } else if (param_type == "Buffer") {
-      parameter.type = tob::ebpfpub::IFunctionTracer::Parameter::Type::Buffer;
-      needs_value_size = true;
-
-    } else if (param_type == "String") {
-      parameter.type = tob::ebpfpub::IFunctionTracer::Parameter::Type::String;
-
-    } else if (param_type == "Argv") {
-      parameter.type = tob::ebpfpub::IFunctionTracer::Parameter::Type::Argv;
-
-    } else {
-      return createError(ErrorCode::InvalidConfigurationSyntax)
-             << "Parameter '" << parameter.name
-             << "' does not have a valid 'type' entry";
-    }
-
-    auto opt_size = parameter_obj.get_optional<std::string>("size");
-
-    if (opt_size.has_value() != needs_value_size) {
-      return createError(ErrorCode::InvalidConfigurationSyntax)
-             << "Parameter '" << parameter.name << "' "
-             << (needs_value_size ? "needs" : "does not need")
-             << "' a 'size' entry";
-    }
-
-    if (needs_value_size) {
-      const auto& param_size = opt_size.value();
-
-      auto integer_size_res = tryTo<std::uint64_t>(param_size);
-      if (!integer_size_res.isError()) {
-        parameter.opt_size_var = integer_size_res.get();
-      } else {
-        parameter.opt_size_var = param_size;
-      }
-    }
-
-    config.parameter_list.push_back(std::move(parameter));
-  }
-
-  return config;
-}
-
 Expected<TableColumns, UserTracer::ErrorCode> UserTracer::generateTableSchema(
-    const Configuration& configuration) {
+    const TracerConfiguration& configuration) {
   TableColumns column_list = {
       std::make_tuple("timestamp", TEXT_TYPE, ColumnOptions::DEFAULT),
       std::make_tuple("tid", INTEGER_TYPE, ColumnOptions::DEFAULT),

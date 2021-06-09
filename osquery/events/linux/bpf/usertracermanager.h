@@ -11,6 +11,7 @@
 
 #include <osquery/events/eventpublisher.h>
 #include <osquery/events/linux/bpf/isystemstatetracker.h>
+#include <osquery/events/linux/bpf/usertracersconfigplugin.h>
 
 #include <ebpfpub/ifunctiontracer.h>
 #include <ebpfpub/iperfeventreader.h>
@@ -45,20 +46,27 @@ class UserTracerManager final
   std::unique_ptr<PrivateData> d;
 
  public:
-  using Configuration = std::unordered_map<std::string, std::string>;
-
-  struct TracerState final {
-    std::string config_path;
-    std::string config_contents;
+  struct TracerInstance final {
+    TracerConfiguration config;
     osquery::UserTracer::Ptr tracer;
   };
 
-  using TracerStateList = std::vector<TracerState>;
+  using TracerInstanceList = std::vector<TracerInstance>;
 
-  static Configuration loadConfiguration();
+  static TracerConfigurationList loadConfiguration();
 
-  static void applyConfiguration(TracerStateList& tracer_state_list,
-                                 const Configuration& new_config);
+  static void applyConfiguration(TracerInstanceList& tracer_state_list,
+                                 const TracerConfigurationList& new_config);
+
+  using ParameterListIndex =
+      std::unordered_map<std::string,
+                         const tob::ebpfpub::IFunctionTracer::Parameter&>;
+
+  static ParameterListIndex createParameterListIndex(
+      const tob::ebpfpub::IFunctionTracer::ParameterList& parameter_list);
+
+  static bool areConfigsEqual(const TracerConfiguration& lhs,
+                              const TracerConfiguration& rhs);
 };
 
 } // namespace osquery

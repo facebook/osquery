@@ -7,14 +7,14 @@
       "name": "handle",
       "type": "Integer",
       "mode": "In",
-      "size": "8"
+      "size": 8
     },
 
     {
       "name": "option",
       "type": "Integer",
       "mode": "In",
-      "size": "8"
+      "size": 8
     },
 
     {

@@ -10,10 +10,10 @@
 #pragma once
 
 #include <osquery/core/tables.h>
+#include <osquery/events/linux/bpf/usertracersconfigplugin.h>
 #include <osquery/sql/dynamic_table_row.h>
 #include <osquery/utils/expected/expected.h>
 
-#include <ebpfpub/ifunctiontracer.h>
 #include <ebpfpub/iperfeventreader.h>
 
 #include <map>
@@ -26,9 +26,6 @@ class UserTracer final : public TablePlugin {
  public:
   enum class ErrorCode {
     MemoryAllocationFailure,
-    InvalidJSONConfiguration,
-    InvalidConfigurationSyntax,
-    InvalidSchema,
     BufferStorageError,
     PerfEventArrayError,
     PerfEventReaderError,
@@ -36,7 +33,8 @@ class UserTracer final : public TablePlugin {
   };
 
   using Ptr = std::shared_ptr<UserTracer>;
-  static Expected<Ptr, ErrorCode> create(const std::string& configuration);
+  static Expected<Ptr, ErrorCode> create(
+      const TracerConfiguration& configuration);
 
   virtual ~UserTracer() override;
 
@@ -50,24 +48,14 @@ class UserTracer final : public TablePlugin {
   struct PrivateData;
   std::unique_ptr<PrivateData> d;
 
-  UserTracer(const std::string& configuration);
+  UserTracer(TracerConfiguration configuration);
 
   virtual TableColumns columns() const override;
   virtual TableRows generate(QueryContext& context) override;
 
  public:
-  struct Configuration final {
-    std::string table_name;
-    std::optional<std::string> opt_image_path;
-    std::string function_name;
-    tob::ebpfpub::IFunctionTracer::ParameterList parameter_list;
-  };
-
-  static Expected<Configuration, ErrorCode> parseConfiguration(
-      const std::string& configuration);
-
   static Expected<TableColumns, ErrorCode> generateTableSchema(
-      const Configuration& configuration);
+      const TracerConfiguration& configuration);
 
   static bool getFieldValue(
       osquery::DynamicTableRowHolder& row,
