@@ -443,9 +443,17 @@ function(generateInstallDirectives)
     )
 
   elseif(PLATFORM_MACOS)
+
+    if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+      set(CMAKE_INSTALL_PREFIX "/opt" CACHE PATH "" FORCE) 
+    endif()
+    
     install(
       FILES
         "tools/deployment/macos_packaging/osquery.entitlements"
+        "tools/deployment/macos_packaging/embedded.provisionprofile"
+        "tools/deployment/macos_packaging/Info.plist"
+        "tools/deployment/macos_packaging/PkgInfo"
 
       DESTINATION
         "/control"
