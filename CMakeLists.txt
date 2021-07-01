@@ -519,8 +519,8 @@ function(generateInstallDirectives)
 
     install(
       FILES
-        "tools/deployment/macos_packaging/pkg/com.facebook.osqueryd.conf"
-        "tools/deployment/macos_packaging/pkg/com.facebook.osqueryd.plist"
+        "tools/deployment/macos_packaging/pkg/io.osquery.agent.conf"
+        "tools/deployment/macos_packaging/pkg/io.osquery.agent.plist"
 
       DESTINATION
         "/control/pkg"
