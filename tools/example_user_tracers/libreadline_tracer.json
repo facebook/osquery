@@ -1,0 +1,18 @@
+{
+  "table_name": "libreadline_events",
+  "path": "/usr/bin/bash",
+  "function_name": "readline",
+  "parameter_list": [
+    {
+      "name": "prompt",
+      "type": "String",
+      "mode": "In"
+    },
+    {
+      "name": "EXIT_CODE",
+      "type": "String",
+      "mode": "Out"
+    }
+  ]
+}
+

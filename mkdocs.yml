@@ -34,6 +34,7 @@ nav:
   - File Integrity Monitoring: deployment/file-integrity-monitoring.md
   - YARA Scanning: deployment/yara.md
   - Process Auditing: deployment/process-auditing.md
+  - Linux user tracers: deployment/user-tracers.md
   - Remote Settings: deployment/remote.md
   - Syslog Consumption: deployment/syslog.md
   - Debugging: deployment/debugging.md

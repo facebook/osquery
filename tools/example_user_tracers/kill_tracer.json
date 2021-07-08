@@ -1,0 +1,19 @@
+{
+  "table_name": "kill_events",
+  "function_name": "kill",
+  "parameter_list": [
+    {
+      "name": "pid",
+      "type": "Integer",
+      "mode": "In",
+      "size": 8
+    },
+    {
+      "name": "signal",
+      "type": "Integer",
+      "mode": "In",
+      "size": 8
+    }
+  ]
+}
+
