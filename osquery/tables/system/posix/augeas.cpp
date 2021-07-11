@@ -153,6 +153,42 @@ class AugeasHandle {
 
 static AugeasHandle kAugeasHandle;
 
+std::string patternFromOsquery(const std::string& input,
+                               bool isLike,
+                               bool isPath) {
+  // If this is a path, then we must prepend /files. Otherwise we
+  // assume the caller knows what it's doing.
+  std::string pattern = isPath ? "/files" + input : input;
+
+  // Augeas presents data as a slash seperated tree. It uses `/*` as a
+  // single level wildcard, and `//*` as a recursive wildcard. However,
+  // sqlite uses % as a wildcard. To allow for LIKE expressions, we need
+  // to convert.
+  if (isLike) {
+    size_t pos;
+    while ((pos = pattern.find("%%")) != std::string::npos) {
+      pattern.replace(pos, 2, "/*");
+    }
+    while ((pos = pattern.find("%")) != std::string::npos) {
+      pattern.replace(pos, 1, "*");
+    }
+  }
+
+  // augues blurs filename and contents into the node. So when
+  // dealing with files, osquery must append the recuse wildcard. To
+  // allow a LIKE query some flexibility, and to prevent augeas
+  // syntax errors on extra wildcards, we only do this if there is
+  // not already a wildcard there. (This handles both the LIKE and
+  // EQUALS case)
+  if (isPath) {
+    if (strncmp(&pattern.back(), "*", 1) != 0) {
+      pattern.append("//*");
+    }
+  }
+
+  return pattern;
+}
+
 QueryData genAugeas(QueryContext& context) {
   // Strategy for handling augeas
   // (As informed by forensic examination of the underlying code)
@@ -202,23 +238,37 @@ QueryData genAugeas(QueryContext& context) {
     patterns.insert(nodes.begin(), nodes.end());
   }
 
+  if (context.hasConstraint("node", LIKE)) {
+    auto nodes = context.constraints["node"].getAll(LIKE);
+    for (const auto& node : nodes) {
+      if (node.empty()) {
+        continue;
+      }
+      patterns.insert(patternFromOsquery(node, true, false));
+    }
+  }
+
   if (context.hasConstraint("path", EQUALS)) {
     // Allow requests via filesystem path.
     auto paths = context.constraints["path"].getAll(EQUALS);
-    std::ostringstream pattern;
-
     for (const auto& path : paths) {
-      pattern << "/files" << path;
-      patterns.insert(pattern.str());
+      if (path.empty()) {
+        continue;
+      }
+      patterns.insert(patternFromOsquery(path, false, true));
+    }
+  }
 
-      pattern.clear();
-      pattern.str(std::string());
-
-      pattern << "/files" << path << "//*";
-      patterns.insert(pattern.str());
-
-      pattern.clear();
-      pattern.str(std::string());
+  // This LIKE strategy only works because we've loaded the entire
+  // augeas system. If we ever move to loading by explicit files, this
+  // will break.
+  if (context.hasConstraint("path", LIKE)) {
+    auto paths = context.constraints["path"].getAll(LIKE);
+    for (const auto& path : paths) {
+      if (path.empty()) {
+        continue;
+      }
+      patterns.insert(patternFromOsquery(path, true, true));
     }
   }
 
