@@ -152,12 +152,18 @@ class AuditdNetlinkParser final : public InternalRunnable {
 class AuditdNetlink final : private boost::noncopyable {
  public:
   AuditdNetlink();
-  virtual ~AuditdNetlink() = default;
+  virtual ~AuditdNetlink();
 
   /// Prepares the raw audit event records stored in the given context.
   std::vector<AuditEventRecord> getEvents() noexcept;
 
  private:
+  /// Netlink reader service
+  std::shared_ptr<AuditdNetlinkReader> reader_service_;
+
+  /// Netlink parser service
+  std::shared_ptr<AuditdNetlinkParser> parser_service_;
+
   /// Shared data
   AuditdContextRef auditd_context_;
 };

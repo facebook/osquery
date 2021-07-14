@@ -68,21 +68,14 @@ Status AuditEventPublisher::setUp() {
 
 void AuditEventPublisher::configure() {
   if (!IsPublisherEnabled()) {
-    return;
-  }
+    audit_netlink_.reset();
 
-  if (audit_netlink_ == nullptr) {
+  } else if (audit_netlink_ == nullptr) {
     audit_netlink_ = std::make_unique<AuditdNetlink>();
   }
 }
 
-void AuditEventPublisher::tearDown() {
-  if (!IsPublisherEnabled()) {
-    return;
-  }
-
-  audit_netlink_.reset();
-}
+void AuditEventPublisher::tearDown() {}
 
 Status AuditEventPublisher::run() {
   if (!IsPublisherEnabled()) {

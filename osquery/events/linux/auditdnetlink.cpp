@@ -130,19 +130,28 @@ enum AuditStatus {
 
 AuditdNetlink::AuditdNetlink() {
   try {
+    VLOG(1) << "Starting the AuditdNetlink services";
+
     auditd_context_ = std::make_shared<AuditdContext>();
 
-    Dispatcher::addService(
-        std::make_shared<AuditdNetlinkReader>(auditd_context_));
+    reader_service_ = std::make_shared<AuditdNetlinkReader>(auditd_context_);
+    Dispatcher::addService(reader_service_);
 
-    Dispatcher::addService(
-        std::make_shared<AuditdNetlinkParser>(auditd_context_));
+    parser_service_ = std::make_shared<AuditdNetlinkParser>(auditd_context_);
+    Dispatcher::addService(parser_service_);
 
   } catch (const std::bad_alloc&) {
     VLOG(1) << "Failed to initialize the AuditdNetlink services due to a "
                "memory allocation error";
     throw;
   }
+}
+
+AuditdNetlink::~AuditdNetlink() {
+  VLOG(1) << "Stopping the AuditdNetlink services";
+
+  parser_service_->interrupt();
+  reader_service_->interrupt();
 }
 
 std::vector<AuditEventRecord> AuditdNetlink::getEvents() noexcept {
