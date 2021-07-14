@@ -1,0 +1,23 @@
+table_name("macho_info")
+description("MACHO file information.")
+schema([
+    Column("path", TEXT, "Path to file.", required=True),
+    Column("filename", TEXT, "Executable name."),
+    Column("arch", TEXT, "Executable arch."),
+    Column("entrypoint", TEXT, "Entrypoint to executable."),
+    Column("build_version_min", TEXT, "Minimum build version."),
+    Column("build_version_sdk", TEXT, "Executable sdk build version."),
+    Column("version_min", TEXT, "Executable version minimum."),
+    Column("version_sdk", TEXT, "Executable sdk version."),
+    Column("is_pie", INTEGER, "Is the executable Position Indenpendent."),
+    Column("has_nx", INTEGER, "Is the executable using nx protection."),
+    Column("is_encrypted", INTEGER, "Is Encryption Info present in the executable."),
+])
+
+implementation("macho_info@genMachoInfo")
+examples([
+    "select * from macho_info where path = '/bin/ls'",
+])
+fuzz_paths([
+    "/usr/bin",
+])

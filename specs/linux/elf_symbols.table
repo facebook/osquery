@@ -1,14 +1,14 @@
 table_name("elf_symbols")
 description("ELF symbol list.")
 schema([
-    Column("name", TEXT, "Symbol name"),
-    Column("addr", INTEGER, "Symbol address (value)"),
-    Column("size", INTEGER, "Size of object"),
-    Column("type", TEXT, "Symbol type"),
-    Column("binding", TEXT, "Binding type"),
-    Column("offset", INTEGER, "Section table index"),
-    Column("table", TEXT, "Table name containing symbol"),
-    Column("path", TEXT, "Path to ELF file", required=True, index=True),
+    Column("path", TEXT, "Path to ELF file.", required=True, index=True),
+    Column("filename", TEXT, "ELF filename."),
+    Column("symbol_name", TEXT, "Symbol name."),
+    Column("symbol_size", INTEGER, "Size of object."),
+    Column("symbol_type", TEXT, "Symbol type."),
+    Column("binding", TEXT, "Binding type."),
+    Column("symbol_version", TEXT, "Symbol version info."),
+    Column("symbol_shndx", INTEGER, "Symbol section index.")
 ])
 
 implementation("elf_info@getELFSymbols")

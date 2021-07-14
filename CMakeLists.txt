@@ -108,14 +108,17 @@ function(importLibraries)
     "Linux:librpm"
     "Linux:libudev"
     "Linux,Darwin,Windows:libxml2"
+    "Linux,Darwin,Windows:lief"
     "Linux,Darwin,Windows:linenoise-ng"
     "Linux,Darwin:lldpd"
     "Linux,Darwin,Windows:lzma"
+    "Linux,Windows,Darwin:mbedtls"
     "Linux,Darwin:popt"
     "Linux,Darwin,Windows:rapidjson"
     "Linux,Darwin,Windows:rocksdb"
     "Linux,Darwin,Windows:sleuthkit"
     "Linux,Darwin:smartmontools"
+    "Linux,Darwin,Windows:spdlog"
     "Linux,Darwin,Windows:sqlite"
     "Linux,Darwin:ssdeep-cpp"
     "Linux,Darwin,Windows:thrift"
@@ -128,6 +131,7 @@ function(importLibraries)
     "Linux:expat"
     "Linux:dbus"
     "Linux:libcap"
+    "Darwin,Windows,Linux:utfcpp"
   )
 
   if(OSQUERY_BUILD_BPF)

@@ -235,6 +235,10 @@ function(generateTestsIntegrationTablesTestsTest)
       launchd.cpp
       launchd_overrides.cpp
       location_services.cpp
+      macho_functions.cpp
+      macho_info.cpp
+      macho_libraries.cpp
+      macho_sections.cpp
       managed_policies.cpp
       mdfind.cpp
       nfs_shares.cpp
@@ -299,6 +303,11 @@ function(generateTestsIntegrationTablesTestsTest)
       ntdomains.cpp
       ntfs_acl_permissions.cpp
       patches.cpp
+      pe_functions.cpp
+      pe_info.cpp
+      pe_libraries.cpp
+      pe_sections.cpp
+      pe_sig.cpp
       physical_disk_performance.cpp
       pipes.cpp
       powershell_events.cpp

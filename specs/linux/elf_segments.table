@@ -1,14 +1,16 @@
 table_name("elf_segments")
 description("ELF segment information.")
 schema([
-    Column("name", TEXT, "Segment type/name"),
-    Column("offset", INTEGER, "Segment offset in file"),
-    Column("vaddr", INTEGER, "Segment virtual address in memory"),
-    Column("psize", INTEGER, "Size of segment in file"),
-    Column("msize", INTEGER, "Segment offset in memory"),
-    Column("flags", TEXT, "Segment attributes"),
-    Column("align", INTEGER, "Segment alignment"),
-    Column("path", TEXT, "Path to ELF file", required=True, index=True),
+    Column("path", TEXT, "Path to ELF file.", required=True, index=True),
+    Column("filename", TEXT, "ELF filename."),
+    Column("segment_name", TEXT, "Segment type/name."),
+    Column("segment_file_offset", TEXT, "Segment offset in file."),
+    Column("segment_virtual_address", TEXT, "Segment virtual address in memory."),
+    Column("segment_physical_address", TEXT, "Segment physical address."),
+    Column("segment_physical_size", BIGINT, "Size of segment in file."),
+    Column("segment_virtual_size", BIGINT, "Segment virtual fize."),
+    Column("segment_flags", TEXT, "Segment flags."),
+    Column("alignment", INTEGER, "Segment alignment.")
 ])
 
 implementation("elf_info@getELFSegments")

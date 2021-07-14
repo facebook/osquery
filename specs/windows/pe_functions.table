@@ -1,0 +1,19 @@
+table_name("pe_functions")
+description("PE file functions information.")
+schema([
+    Column("path", TEXT, "Path to file.", required=True),
+    Column("filename", TEXT, "Executable name."),
+    Column("type", TEXT, "Function type (import or export)."),
+    Column("function_name", TEXT, "Function name."),
+    Column("function_address", TEXT, "Function address."),
+    Column("ordinal", INTEGER, "Ordinal number."),
+    Column("library", TEXT, "Function library."),
+])
+
+implementation("pe_functions@genPeFunctions")
+examples([
+    "select * from pe_functions where path = 'C:\Windows\notepad.exe'",
+])
+fuzz_paths([
+    "C:\Windows\notepad.exe",
+])

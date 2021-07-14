@@ -1,0 +1,18 @@
+table_name("macho_functions")
+description("MACHO file functions information.")
+schema([
+    Column("path", TEXT, "Path to file.", required=True),
+    Column("filename", TEXT, "Executable name."),
+    Column("arch", TEXT, "Executable arch."),
+    Column("function_type", TEXT, "Function type (import or export)."),
+    Column("function_name", TEXT, "Function name."),
+    Column("function_address", TEXT, "Function address."),
+])
+
+implementation("macho_functions@genMachoFunctions")
+examples([
+    "select * from macho_functions where path = '/bin/ls'",
+])
+fuzz_paths([
+    "/usr/bin",
+])

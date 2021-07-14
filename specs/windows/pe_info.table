@@ -1,0 +1,33 @@
+table_name("pe_info")
+description("PE file information.")
+schema([
+    Column("path", TEXT, "Path to file.", required=True),
+    Column("filename", TEXT, "PE name."),
+    Column("entrypoint", TEXT, "Entrypoint to executable."),
+    Column("is_pie", INTEGER, "Is the executable Position Indenpendent."),
+    Column("imphash", TEXT, "Impash (import hash) for PE file."),
+    Column("signed", INTEGER, "Is the PE file signed."),
+    Column("has_resources", INTEGER, "Does the PE file have resources."),
+    Column("number_of_language_codes", INTEGER, "Number of lanugage code item in PE file."),
+    Column("company_name", TEXT, "Author of PE file."),
+    Column("product_version", TEXT, "PE product version."),
+    Column("file_version", TEXT, "PE file version."),
+    Column("file_description", TEXT, "PE description."),
+    Column("product_name", TEXT, "PE product name."),
+    Column("internal_name", TEXT, "Internal name of PE file."),
+    Column("legal_copyright", TEXT, "Copyright info for PE file."),
+    Column("legal_trademarks", TEXT, "Trademark info for the PE file."),
+    Column("original_filename", TEXT, "Original name for PE file."),
+    Column("language", TEXT, "Langauage of PE file."),
+    Column("comments", TEXT, "Comments for the PE file."),
+    Column("private_build", TEXT, "Private info for the PE file."),
+    Column("special_build", TEXT, "Special info for the PE file.")
+])
+
+implementation("pe_info@genPeInfo")
+examples([
+    "select * from pe_info where path = 'C:\Windows\notepad.exe'",
+])
+fuzz_paths([
+    "C:\Windows\notepad.exe",
+])

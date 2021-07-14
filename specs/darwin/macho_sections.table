@@ -1,0 +1,20 @@
+table_name("macho_sections")
+description("MACHO file sections information.")
+schema([
+    Column("path", TEXT, "Path to file.", required=True),
+    Column("filename", TEXT, "Executable name."),
+    Column("arch", TEXT, "Executable arch."),
+    Column("section_name", TEXT, "Section name."),
+    Column("section_address", TEXT, "Section address."),
+    Column("section_flags", TEXT, "Section flags."),
+    Column("section_size", TEXT, "Section size."),
+    Column("entropy", TEXT, "Section entropy."),
+])
+
+implementation("macho_sections@genMachoSections")
+examples([
+    "select * from macho_sections where path = '/bin/ls'",
+])
+fuzz_paths([
+    "/usr/bin",
+])

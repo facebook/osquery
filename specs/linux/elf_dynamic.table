@@ -1,10 +1,11 @@
 table_name("elf_dynamic")
 description("ELF dynamic section information.")
 schema([
-    Column("tag", INTEGER, "Tag ID"),
-    Column("value", INTEGER, "Tag value"),
-    Column("class", INTEGER, "Class (32 or 64)"),
-    Column("path", TEXT, "Path to ELF file", required=True, index=True),
+    Column("path", TEXT, "Path to ELF file.", required=True, index=True),
+    Column("filename", TEXT, "Executable name."),
+    Column("dynamic_tag", TEXT, "Tag ID."),
+    Column("dynamic_value", INTEGER, "Tag value."),
+    Column("class", TEXT, "Class (32 or 64).")
 ])
 
 implementation("elf_info@getELFDynamic")

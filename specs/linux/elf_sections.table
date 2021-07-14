@@ -1,15 +1,16 @@
 table_name("elf_sections")
 description("ELF section information.")
 schema([
-    Column("name", TEXT, "Section name"),
-    Column("type", INTEGER, "Section type"),
-    Column("vaddr", INTEGER, "Section virtual address in memory"),
-    Column("offset", INTEGER, "Offset of section in file"),
-    Column("size", INTEGER, "Size of section"),
-    Column("flags", TEXT, "Section attributes"),
-    Column("link", TEXT, "Link to other section"),
-    Column("align", INTEGER, "Segment alignment"),
-    Column("path", TEXT, "Path to ELF file", required=True, index=True),
+    Column("path", TEXT, "Path to ELF file.", required=True, index=True),
+    Column("filename", TEXT, "Executable name."),
+    Column("section_name", TEXT, "Section name."),
+    Column("type", TEXT, "Section type"),
+    Column("section_address", TEXT, "Section adress."),
+    Column("section_size", INTEGER, "Section size."),
+    Column("section_flags", TEXT, "Section attributes."),
+    Column("link", TEXT, "Link to other section."),
+    Column("entropy", TEXT, "Section entropy."),
+    Column("align", INTEGER, "Segment alignment.")  
 ])
 
 implementation("elf_info@getELFSections")

@@ -1,0 +1,18 @@
+table_name("pe_sections")
+description("PE file sections.")
+schema([
+    Column("path", TEXT, "Path to file.", required=True),
+    Column("filename", TEXT, "Executable name."),
+    Column("section_name", TEXT, "PE section name."),
+    Column("section_size", INTEGER, "Section size."),
+    Column("virtual_size", INTEGER, "Section virtual size."),
+    Column("entropy", TEXT, "Timestamp for library."),
+])
+
+implementation("pe_sections@genPeSections")
+examples([
+    "select * from pe_sections where path = 'C:\Windows\notepad.exe'",
+])
+fuzz_paths([
+    "C:\Windows\notepad.exe",
+])

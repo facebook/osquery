@@ -1,15 +1,18 @@
 table_name("elf_info")
 description("ELF file information.")
 schema([
-    Column("class", TEXT, "Class type, 32 or 64bit"),
-    Column("abi", TEXT, "Section type"),
-    Column("abi_version", INTEGER, "Section virtual address in memory"),
-    Column("type", TEXT, "Offset of section in file"),
-    Column("machine", INTEGER, "Machine type"),
-    Column("version", INTEGER, "Object file version"),
-    Column("entry", BIGINT, "Entry point address"),
-    Column("flags", INTEGER, "ELF header flags"),
-    Column("path", TEXT, "Path to ELF file", required=True, index=True),
+    Column("path", TEXT, "Path to ELF file.",required=True, index=True),
+    Column("filename", TEXT, "ELF name."),
+    Column("class", TEXT, "Class type, 32 or 64bit."),
+    Column("abi", TEXT, "Section type."),
+    Column("abi_version", INTEGER, "Section virtual address in memory."),
+    Column("type", TEXT, "Offset of section in file."),
+    Column("machine", TEXT, "Machine type."),
+    Column("version", TEXT, "Object file version."),
+    Column("flags", INTEGER, "ELF header flags."),
+    Column("is_pie", TEXT, "Is the executable Position Independent."),
+    Column("has_nx", TEXT, "Is the executable using NX protection."),
+    Column("entrypoint", TEXT, "Entrypoint to executable.")
 ])
 
 implementation("elf_info@getELFInfo")

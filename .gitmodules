@@ -136,3 +136,16 @@
 [submodule "libraries/cmake/source/libcap/src"]
 	path = libraries/cmake/source/libcap/src
 	url = https://kernel.googlesource.com/pub/scm/libs/libcap/libcap.git
+[submodule "libraries/cmake/source/lief/src"]
+	path = libraries/cmake/source/lief/src
+	url = https://github.com/lief-project/LIEF
+[submodule "libraries/cmake/source/mbedtls/src"]
+	path = libraries/cmake/source/mbedtls/src
+	url = https://github.com/ARMmbed/mbedtls
+	branch = development_2.x
+[submodule "libraries/cmake/source/spdlog/src"]
+	path = libraries/cmake/source/spdlog/src
+	url = https://github.com/gabime/spdlog
+[submodule "libraries/cmake/source/utfcpp/src"]
+	path = libraries/cmake/source/utfcpp/src
+	url = https://github.com/nemtrif/utfcpp

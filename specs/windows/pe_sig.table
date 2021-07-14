@@ -1,0 +1,20 @@
+table_name("pe_sig")
+description("PE file signature information.")
+schema([
+    Column("path", TEXT, "Path to file.", required=True),
+    Column("filename", TEXT, "Executable name."),
+    Column("certificate_valid_from", TEXT, "Certificate valid start date."),
+    Column("certificate_valid_to", TEXT, "Certificate valid end date."),
+    Column("certificate_issuer", TEXT, "Who issued the certificate."),
+    Column("certificate_subject", TEXT, "Subject for the certificate."),
+    Column("certificate_version", TEXT, "Version number of certificate."),
+    Column("certificate_serial_number", TEXT, "Serial number for the certificate."),
+])
+
+implementation("pe_sig@genPeSig")
+examples([
+    "select * from pe_sig where path = 'C:\Windows\notepad.exe'",
+])
+fuzz_paths([
+    "C:\Windows\notepad.exe",
+])

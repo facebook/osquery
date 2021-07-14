@@ -1,0 +1,15 @@
+table_name("elf_strings")
+description("ELF file strings.")
+schema([
+    Column("string", TEXT, "String in executable."),
+    Column("path", TEXT, "Path to ELF file.", required=True, index=True),
+    Column("filename", TEXT, "ELF name.")
+])
+
+implementation("elf_strings@getELFStrings")
+examples([
+    "select * from elf_strings where path = '/usr/bin/grep'",
+])
+fuzz_paths([
+    "/usr/bin",
+])

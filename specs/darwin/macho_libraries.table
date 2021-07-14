@@ -1,0 +1,18 @@
+table_name("macho_libraries")
+description("MACHO file information.")
+schema([
+    Column("path", TEXT, "Path to file.", required=True),
+    Column("filename", TEXT, "Executable name."),
+    Column("arch", TEXT, "Executable arch."),
+    Column("library_name", TEXT, "Library name."),
+    Column("version", TEXT, "Library version."),
+    Column("compatiblity_version", TEXT, "Library compatiblity version."),
+])
+
+implementation("mach_libraries@genMachoLibraries")
+examples([
+    "select * from macho_libraries where path = '/bin/ls'",
+])
+fuzz_paths([
+    "/usr/bin",
+])

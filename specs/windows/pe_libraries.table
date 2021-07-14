@@ -1,0 +1,19 @@
+table_name("pe_libraries")
+description("PE file libraries.")
+schema([
+    Column("path", TEXT, "Path to file.", required=True),
+    Column("filename", TEXT, "Executable name."),
+    Column("library_name", TEXT, "PE library name."),
+    Column("import_address_table_rva", TEXT, "Import address table."),
+    Column("import_lookup_table_rva", TEXT, "Import Lookup table."),
+    Column("timestamp", INTEGER, "Timestamp for library."),
+    Column("forwarder_chain", INTEGER, "Forwarder chain for library."),
+])
+
+implementation("pe_libraries@genPeLibraries")
+examples([
+    "select * from pe_libraries where path = 'C:\Windows\notepad.exe'",
+])
+fuzz_paths([
+    "C:\Windows\notepad.exe",
+])
