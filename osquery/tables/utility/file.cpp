@@ -142,6 +142,7 @@ void genFileInfo(const fs::path& path,
   r["volume_serial"] = SQL_TEXT(file_stat.volume_serial);
   r["product_version"] = SQL_TEXT(file_stat.product_version);
   r["file_version"] = SQL_TEXT(file_stat.file_version);
+  r["original_filename"] = SQL_TEXT(file_stat.original_filename);
 
 #endif
 

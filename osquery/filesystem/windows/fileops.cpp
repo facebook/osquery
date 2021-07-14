@@ -154,6 +154,145 @@ Status windowsGetVersionInfo(const std::string& path,
   return Status::success();
 }
 
+typedef struct LANGANDCODEPAGE {
+  WORD wLanguage;
+  WORD wCodePage;
+} langandcodepage_t;
+
+// retrieve the list of languages and code pages from version information
+// ressource
+Status getLanguagesAndCodepages(
+    const std::unique_ptr<BYTE[]>& versionInfo,
+    std::vector<langandcodepage_t>& langs_and_codepages) {
+  langandcodepage_t* lpTranslate = nullptr;
+  UINT cbTranslate = 0;
+
+  if (VerQueryValueW(versionInfo.get(),
+                     L"\\VarFileInfo\\Translation",
+                     (LPVOID*)&lpTranslate,
+                     &cbTranslate)) {
+    for (size_t i = 0; i < (cbTranslate / sizeof(langandcodepage_t)); ++i)
+      langs_and_codepages.push_back(lpTranslate[i]);
+    return Status::success();
+  }
+  return Status(GetLastError(), "Failed to read languages and code pages");
+}
+
+void initLanguagesAndCodepagesHeuristic(
+    std::vector<langandcodepage_t>& langs_and_codepages) {
+  langs_and_codepages.push_back({GetUserDefaultLangID(), 0x04B0});
+  langs_and_codepages.push_back({GetUserDefaultLangID(), 0x04E4});
+  langs_and_codepages.push_back({0x0409, 0x04B0}); // US English + CP_UNICODE
+  langs_and_codepages.push_back({0x0409, 0x04E4}); // US English + CP_USASCII
+  langs_and_codepages.push_back(
+      {0x0409, 0x0000}); // US English + unknown codepage
+}
+
+// retrieve OriginalFilename for language and code page from version information
+// ressource
+Status getOriginalFilenameForCodepage(
+    const std::unique_ptr<BYTE[]>& versionInfo,
+    const langandcodepage_t& lang_and_codepage,
+    std::string& original_filename) {
+  WCHAR string_buf[50] = {'\0'};
+  size_t string_buf_size = ARRAYSIZE(string_buf);
+  WCHAR* lpBuffer = nullptr;
+  UINT dwBytes = 0;
+
+  HRESULT hr = StringCchPrintfW(string_buf,
+                                string_buf_size,
+                                L"\\StringFileInfo\\%04x%04x\\OriginalFilename",
+                                lang_and_codepage.wLanguage,
+                                lang_and_codepage.wCodePage);
+  if (SUCCEEDED(hr) &&
+      VerQueryValueW(
+          versionInfo.get(), string_buf, (LPVOID*)&lpBuffer, &dwBytes)) {
+    original_filename = wstringToString(lpBuffer);
+    return Status::success();
+  }
+  return Status(GetLastError(),
+                "Failed to retrieve OriginalFilename for codepage");
+}
+
+// retrieve OriginalFilename from version information ressource
+// original_filename is only modified on successful read
+Status windowsGetOriginalFilename(const std::string& path,
+                                  std::string& original_filename) {
+  DWORD handle = 0;
+  std::wstring wpath = stringToWstring(path);
+
+  // GetFileVersionInfoSize
+  auto verSize =
+      GetFileVersionInfoSizeExW(FILE_VER_GET_NEUTRAL, wpath.c_str(), &handle);
+  if (verSize == 0) {
+    return Status(GetLastError(), "Failed to get file version info size");
+  }
+
+  // GetFileVersionInfo
+  std::unique_ptr<BYTE[]> verInfo;
+  try {
+    verInfo = std::make_unique<BYTE[]>(verSize);
+  } catch (std::bad_alloc /* e */) { /* empty body */
+  }
+  if (verInfo == nullptr) {
+    return Status(1, "Failed to malloc for version info");
+  }
+  auto err = GetFileVersionInfoExW(
+      FILE_VER_GET_NEUTRAL, wpath.c_str(), 0, verSize, verInfo.get());
+  if (err == 0) {
+    return Status(GetLastError(), "Failed to get file version info");
+  }
+
+  // retrieve the list of languages and code pages
+  std::vector<langandcodepage_t> langs_and_codepages;
+  auto stat = getLanguagesAndCodepages(verInfo, langs_and_codepages);
+  if (!stat.ok()) {
+    return stat;
+  }
+
+  // retrieve OriginalFilename for each language and code page, stop on first
+  // successful read
+  stat = Status::failure(
+      "Failed to retrieve OriginalFilename from version information ressource");
+  for (size_t i = 0; i < langs_and_codepages.size(); ++i) {
+    stat = getOriginalFilenameForCodepage(
+        verInfo, langs_and_codepages[i], original_filename);
+    if (stat.ok()) {
+      break;
+    }
+  }
+  /*
+   * According to
+   * https://referencesource.microsoft.com/#system/services/monitoring/system/diagnosticts/FileVersionInfo.cs,469
+   * some dlls might not contain correct codepage information. In this case we
+   * will fail during lookup. Explorer will take a few shots in dark by trying
+   * following ID:
+   *
+   * 040904B0 // US English + CP_UNICODE
+   * 040904E4 // US English + CP_USASCII
+   * 04090000 // US English + unknown codepage
+   * Explorer also randomly guesses 041D04B0=Swedish+CP_UNICODE and
+   * 040704B0=German+CP_UNICODE sometimes. We will try to simulate similiar
+   * behavior here.
+   */
+  if (!stat.ok()) {
+    langs_and_codepages.clear();
+    initLanguagesAndCodepagesHeuristic(langs_and_codepages);
+    for (size_t i = 0; i < langs_and_codepages.size(); ++i) {
+      stat = getOriginalFilenameForCodepage(
+          verInfo, langs_and_codepages[i], original_filename);
+      if (stat.ok()) {
+        break;
+      }
+    }
+  }
+
+  return stat.ok() ? Status::success()
+                   : Status::failure(
+                         "Failed to retrieve OriginalFilename from "
+                         "version information ressource");
+}
+
 static bool hasGlobBraces(const std::wstring& glob) {
   int brace_depth = 0;
   bool has_brace = false;
@@ -1823,6 +1962,9 @@ Status platformStat(const fs::path& path, WINDOWS_STAT* wfile_stat) {
   windowsGetVersionInfo(wstringToString(path.wstring()),
                         wfile_stat->product_version,
                         wfile_stat->file_version);
+
+  windowsGetOriginalFilename(wstringToString(path.wstring()),
+                             wfile_stat->original_filename);
 
   CloseHandle(file_handle);
 

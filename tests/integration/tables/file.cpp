@@ -73,6 +73,7 @@ TEST_F(FileTests, test_sanity) {
   row_map["file_id"] = NormalType;
   row_map["product_version"] = NormalType;
   row_map["file_version"] = NormalType;
+  row_map["original_filename"] = NormalType;
 #endif
 
 #ifdef __APPLE__

@@ -25,6 +25,7 @@ extended_schema(WINDOWS, [
     Column("file_id", TEXT, "file ID"),
     Column("file_version", TEXT, "File version"),
     Column("product_version", TEXT, "File product version"),
+    Column("original_filename", TEXT, "File original name"),
 ])
 extended_schema(DARWIN, [
     Column("bsd_flags", TEXT, "The BSD file flags (chflags). Possible values: NODUMP, UF_IMMUTABLE, UF_APPEND, OPAQUE, HIDDEN, ARCHIVED, SF_IMMUTABLE, SF_APPEND")

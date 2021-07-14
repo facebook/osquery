@@ -93,6 +93,7 @@ typedef struct win_stat {
   std::string volume_serial;
   std::string product_version;
   std::string file_version;
+  std::string original_filename;
 
 } WINDOWS_STAT;
 
