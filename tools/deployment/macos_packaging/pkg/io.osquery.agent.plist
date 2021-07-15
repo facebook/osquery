@@ -7,10 +7,10 @@
   <key>Disabled</key>
   <false/>
   <key>Label</key>
-  <string>com.facebook.osqueryd</string>
+  <string>io.osquery.agent</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/usr/local/bin/osqueryd</string>
+    <string>/opt/osquery.app/Contents/MacOS/osqueryd</string>
     <string>--flagfile=/private/var/osquery/osquery.flags</string>
   </array>
   <key>RunAtLoad</key>
