@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <ctime>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <boost/io/detail/quoted_manip.hpp>
 
@@ -20,6 +21,7 @@
 #include <osquery/core/query.h>
 #include <osquery/core/shutdown.h>
 #include <osquery/database/database.h>
+#include <osquery/events/eventfactory.h>
 #include <osquery/logger/data_logger.h>
 #include <osquery/numeric_monitoring/numeric_monitoring.h>
 #include <osquery/process/process.h>
@@ -51,6 +53,11 @@ FLAG(bool,
      schedule_lognames,
      false,
      "Log the running scheduled query name at INFO level");
+
+HIDDEN_FLAG(bool,
+            events_enforce_denylist,
+            false,
+            "Enforce denylist for event-based queries");
 
 HIDDEN_FLAG(bool,
             schedule_reload_sql,
@@ -228,6 +235,31 @@ void SchedulerRunner::maybeFlushLogs(uint64_t time_step) {
   }
 }
 
+bool enforceDenylist(const std::string& query) {
+  // The only exception for a denylisted query to still run is when this flag
+  // is false (the default).
+  if (FLAGS_events_enforce_denylist) {
+    return true;
+  }
+
+  auto tables = QueryPlanner(query).tables();
+  if (tables.empty()) {
+    return true;
+  }
+
+  // Check if the query only operates on event subscribers.
+  // If it does, skip the denylist enforcement.
+  std::set<std::string> table_set(tables.begin(), tables.end());
+  auto event_tables = EventFactory::subscriberNames();
+
+  std::set<std::string> overlap;
+  std::set_intersection(table_set.begin(),
+                        table_set.end(),
+                        event_tables.begin(),
+                        event_tables.end(),
+                        std::inserter(overlap, overlap.begin()));
+  return overlap.size() != table_set.size();
+}
 void SchedulerRunner::start() {
   // Start the counter at the second.
   auto i = osquery::getUnixTime();
@@ -236,21 +268,27 @@ void SchedulerRunner::start() {
 
   for (; (end == 0) || (i <= end); ++i) {
     auto start_time_point = std::chrono::steady_clock::now();
-    Config::get().scheduledQueries(([&i](const std::string& name,
-                                         const ScheduledQuery& query) {
-      if (query.splayed_interval > 0 && i % query.splayed_interval == 0) {
-        TablePlugin::kCacheInterval = query.splayed_interval;
-        TablePlugin::kCacheStep = i;
-        const auto status = launchQuery(name, query);
-        monitoring::record((boost::format("scheduler.query.%s.%s.status.%s") %
-                            query.pack_name % query.name %
-                            (status.ok() ? "success" : "failure"))
-                               .str(),
-                           1,
-                           monitoring::PreAggregationType::Sum,
-                           true);
-      }
-    }));
+    Config::get().scheduledQueries(
+        ([&i](const std::string& name, const ScheduledQuery& query) {
+          if (query.splayed_interval > 0 && i % query.splayed_interval == 0) {
+            if (query.denylisted && enforceDenylist(query.query)) {
+              return;
+            }
+
+            TablePlugin::kCacheInterval = query.splayed_interval;
+            TablePlugin::kCacheStep = i;
+            const auto status = launchQuery(name, query);
+            monitoring::record(
+                (boost::format("scheduler.query.%s.%s.status.%s") %
+                 query.pack_name % query.name %
+                 (status.ok() ? "success" : "failure"))
+                    .str(),
+                1,
+                monitoring::PreAggregationType::Sum,
+                true);
+          }
+        }),
+        true);
 
     maybeRunDecorators(i);
     maybeReloadSchedule(i);

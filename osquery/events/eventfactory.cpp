@@ -275,20 +275,20 @@ bool EventFactory::exists(const std::string& name_id) {
   return (getInstance().event_subs_.count(name_id) > 0);
 }
 
-std::vector<std::string> EventFactory::publisherTypes() {
+std::set<std::string> EventFactory::publisherTypes() {
   RecursiveLock lock(getInstance().factory_lock_);
-  std::vector<std::string> types;
+  std::set<std::string> types;
   for (const auto& publisher : getInstance().event_pubs_) {
-    types.push_back(publisher.first);
+    types.insert(publisher.first);
   }
   return types;
 }
 
-std::vector<std::string> EventFactory::subscriberNames() {
+std::set<std::string> EventFactory::subscriberNames() {
   RecursiveLock lock(getInstance().factory_lock_);
-  std::vector<std::string> names;
+  std::set<std::string> names;
   for (const auto& subscriber : getInstance().event_subs_) {
-    names.push_back(subscriber.first);
+    names.insert(subscriber.first);
   }
   return names;
 }

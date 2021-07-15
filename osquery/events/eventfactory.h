@@ -138,10 +138,10 @@ class EventFactory : private boost::noncopyable {
   static bool exists(const std::string& sub);
 
   /// Return a list of publisher types, these are their registry names.
-  static std::vector<std::string> publisherTypes();
+  static std::set<std::string> publisherTypes();
 
   /// Return a list of subscriber registry names,
-  static std::vector<std::string> subscriberNames();
+  static std::set<std::string> subscriberNames();
 
   /// Set log forwarding by adding a logger receiver.
   static void addForwarder(const std::string& logger);
