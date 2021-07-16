@@ -4,5 +4,8 @@ schema([
     Column("address", TEXT, "IP address mapping"),
     Column("hostnames", TEXT, "Raw hosts mapping"),
 ])
+extended_schema(LINUX, [
+    Column("pid_with_namespace", INTEGER, "Pids that contain a namespace", additional=True, hidden=True),
+])
 attributes(cacheable=True)
 implementation("etc_hosts@genEtcHosts")

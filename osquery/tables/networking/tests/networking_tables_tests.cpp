@@ -48,6 +48,7 @@ QueryData getEtcHostsIcsExpectedResults() {
 
   row1["address"] = "192.168.11.81";
   row1["hostnames"] = "VM-q27rkc8son.mshome.net";
+  row1["pid_with_namespace"] = "0";
   return {row1};
 }
 
@@ -62,16 +63,22 @@ QueryData getEtcHostsExpectedResults() {
 
   row1["address"] = "127.0.0.1";
   row1["hostnames"] = "localhost";
+  row1["pid_with_namespace"] = "0";
   row2["address"] = "255.255.255.255";
   row2["hostnames"] = "broadcasthost";
+  row2["pid_with_namespace"] = "0";
   row3["address"] = "::1";
   row3["hostnames"] = "localhost";
+  row3["pid_with_namespace"] = "0";
   row4["address"] = "fe80::1%lo0";
   row4["hostnames"] = "localhost";
+  row4["pid_with_namespace"] = "0";
   row5["address"] = "127.0.0.1";
   row5["hostnames"] = "example.com example";
+  row5["pid_with_namespace"] = "0";
   row6["address"] = "127.0.0.1";
   row6["hostnames"] = "example.net";
+  row6["pid_with_namespace"] = "0";
   return {row1, row2, row3, row4, row5, row6};
 }
 

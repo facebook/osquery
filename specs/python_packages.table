@@ -9,6 +9,9 @@ schema([
     Column("path", TEXT, "Path at which this module resides"),
     Column("directory", TEXT, "Directory where Python modules are located", index=True)
 ])
+extended_schema(LINUX, [
+    Column("pid_with_namespace", INTEGER, "Pids that contain a namespace", additional=True, hidden=True),
+])
 implementation("system/linux/python_packages@genPythonPackages")
 examples([
 "select * from python_packages where directory='/usr/'",

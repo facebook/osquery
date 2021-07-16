@@ -20,6 +20,8 @@
 #include <osquery/filesystem/filesystem.h>
 #include <osquery/logger/logger.h>
 #include <osquery/utils/conversions/split.h>
+#include <osquery/worker/ipc/platform_table_container_ipc.h>
+#include <osquery/worker/logging/glog/glog_logger.h>
 
 namespace fs = boost::filesystem;
 
@@ -53,18 +55,23 @@ QueryData parseEtcHostsContent(const std::string& content) {
       }
       r["hostnames"] = boost::algorithm::join(hostnames, " ");
     }
+    r["pid_with_namespace"] = "0";
     results.push_back(r);
   }
 
   return results;
 }
 
-QueryData genEtcHosts(QueryContext& context) {
+QueryData genEtcHostsImpl(QueryContext& context, Logger& logger) {
   std::string content;
   QueryData qres = {};
 
-  if (readFile(kEtcHosts, content).ok()) {
+  auto s = readFile(kEtcHosts, content, 0, false, false, false, false);
+  if (s.ok()) {
     qres = parseEtcHostsContent(content);
+  } else {
+    logger.log(google::GLOG_WARNING, s.getMessage());
+    logger.vlog(1, s.getMessage());
   }
 
 #ifdef WIN32
@@ -77,6 +84,15 @@ QueryData genEtcHosts(QueryContext& context) {
 #endif
 
   return qres;
+}
+
+QueryData genEtcHosts(QueryContext& context) {
+  if (hasNamespaceConstraint(context)) {
+    return generateInNamespace(context, "etc_hosts", genEtcHostsImpl);
+  } else {
+    GLOGLogger logger;
+    return genEtcHostsImpl(context, logger);
+  }
 }
 }
 }

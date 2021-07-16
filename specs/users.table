@@ -14,9 +14,11 @@ schema([
 extended_schema(WINDOWS, [
     Column("type", TEXT, "Whether the account is roaming (domain), local, or a system profile"),
 ])
-
 extended_schema(DARWIN, [
     Column("is_hidden", INTEGER, "IsHidden attribute set in OpenDirectory")
+])
+extended_schema(LINUX, [
+    Column("pid_with_namespace", INTEGER, "Pids that contain a namespace", additional=True, hidden=True),
 ])
 implementation("users@genUsers")
 examples([

@@ -7,4 +7,7 @@ schema([
     Column("netmask", TEXT, "Address (sortlist) netmask length"),
     Column("options", BIGINT, "Resolver options"),
 ])
+extended_schema(LINUX, [
+    Column("pid_with_namespace", INTEGER, "Pids that contain a namespace", additional=True, hidden=True),
+])
 implementation("dns_resolvers@genDNSResolvers")

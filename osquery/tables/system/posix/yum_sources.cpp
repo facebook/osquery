@@ -15,6 +15,8 @@
 #include <osquery/filesystem/filesystem.h>
 #include <osquery/logger/logger.h>
 #include <osquery/utils/system/system.h>
+#include <osquery/worker/ipc/platform_table_container_ipc.h>
+#include <osquery/worker/logging/glog/glog_logger.h>
 
 namespace osquery {
 namespace tables {
@@ -45,16 +47,18 @@ void parseYumConf(std::istream& source,
         r[it2.first] = it2.second.data();
       }
     }
+    r["pid_with_namespace"] = "0";
     results.push_back(r);
   }
 }
 
 void parseYumConf(const std::string& source,
                   QueryData& results,
-                  std::string& repos_dir) {
+                  std::string& repos_dir,
+                  Logger& logger) {
   std::ifstream stream(source.c_str());
   if (!stream) {
-    VLOG(1) << "File " << source << " cannot be read";
+    logger.vlog(1, "File " + source + " cannot be read");
     repos_dir = kYumReposDir;
     return;
   }
@@ -62,31 +66,42 @@ void parseYumConf(const std::string& source,
   try {
     parseYumConf(stream, results, repos_dir);
   } catch (boost::property_tree::ini_parser::ini_parser_error& e) {
-    VLOG(1) << "File " << source
-            << " either cannot be read or cannot be parsed as ini";
+    logger.vlog(
+        1,
+        "File " + source + " either cannot be read or cannot be parsed as ini");
     repos_dir = kYumReposDir;
   }
 }
 
-QueryData genYumSrcs(QueryContext& context) {
+QueryData genYumSrcsImpl(QueryContext& context, Logger& logger) {
   QueryData results;
   // Expect the YUM home to be /etc/yum.conf
   std::string repos_dir;
-  parseYumConf(kYumConf, results, repos_dir);
+  parseYumConf(kYumConf, results, repos_dir, logger);
 
   std::vector<std::string> sources;
   if (!resolveFilePattern(
           repos_dir + "/%" + kYumConfigFileExtension, sources, GLOB_FILES)) {
-    VLOG(1) << "Cannot resolve yum conf files under " << repos_dir << "/*"
-            << kYumConfigFileExtension;
+    logger.vlog(1,
+                "Cannot resolve yum conf files under " + repos_dir + "/*" +
+                    kYumConfigFileExtension);
     return results;
   }
 
   for (const auto& source : sources) {
-    parseYumConf(source, results, repos_dir);
+    parseYumConf(source, results, repos_dir, logger);
   }
 
   return results;
+}
+
+QueryData genYumSrcs(QueryContext& context) {
+  if (hasNamespaceConstraint(context)) {
+    return generateInNamespace(context, "yum_sources", genYumSrcsImpl);
+  } else {
+    GLOGLogger logger;
+    return genYumSrcsImpl(context, logger);
+  }
 }
 } // namespace tables
 } // namespace osquery

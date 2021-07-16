@@ -17,6 +17,8 @@
 #include <osquery/logger/logger.h>
 #include <osquery/utils/conversions/split.h>
 #include <osquery/utils/info/platform_type.h>
+#include <osquery/worker/ipc/platform_table_container_ipc.h>
+#include <osquery/worker/logging/glog/glog_logger.h>
 
 #ifdef WIN32
 #include "windows/registry.h"
@@ -44,10 +46,13 @@ const std::set<std::string> kDarwinPythonPath = {
 const std::string kWinPythonInstallKey =
     "SOFTWARE\\Python\\PythonCore\\%\\InstallPath";
 
-void genPackage(const std::string& path, Row& r) {
+void genPackage(const std::string& path, Row& r, Logger& logger) {
   std::string content;
-  if (!readFile(path, content).ok()) {
-    TLOG << "Cannot find info file: " << path;
+  auto s = readFile(path, content, false, false);
+  if (!s.ok()) {
+    logger.log(google::GLOG_WARNING, s.getMessage());
+    logger.vlog(1, s.getMessage());
+    logger.vlog(1, "Cannot find info file: " + path);
     return;
   }
 
@@ -75,7 +80,9 @@ void genPackage(const std::string& path, Row& r) {
   }
 }
 
-void genSiteDirectories(const std::string& site, QueryData& results) {
+void genSiteDirectories(const std::string& site,
+                        QueryData& results,
+                        Logger& logger) {
   std::vector<std::string> directories;
   if (!listDirectoriesInDirectory(site, directories, true).ok()) {
     return;
@@ -89,21 +96,24 @@ void genSiteDirectories(const std::string& site, QueryData& results) {
     Row r;
     if (directory.find(".dist-info") != std::string::npos) {
       auto path = directory + "/METADATA";
-      genPackage(path, r);
+      genPackage(path, r, logger);
     } else if (directory.find(".egg-info") != std::string::npos) {
       auto path = directory + "/PKG-INFO";
-      genPackage(path, r);
+      genPackage(path, r, logger);
     } else {
       continue;
     }
 
     r["directory"] = site;
     r["path"] = directory;
+    r["pid_with_namespace"] = "0";
     results.push_back(r);
   }
 }
 
-void genWinPythonPackages(const std::string& keyGlob, QueryData& results) {
+void genWinPythonPackages(const std::string& keyGlob,
+                          QueryData& results,
+                          Logger& logger) {
 #ifdef WIN32
   std::set<std::string> installPathKeys;
   expandRegistryGlobs(keyGlob, installPathKeys);
@@ -114,14 +124,14 @@ void genWinPythonPackages(const std::string& keyGlob, QueryData& results) {
       if (p.at("name") != "(Default)") {
         continue;
       }
-      genSiteDirectories(p.at("data"), results);
+      genSiteDirectories(p.at("data"), results, logger);
     }
     pythonInstallLocation.clear();
   }
 #endif
 }
 
-QueryData genPythonPackages(QueryContext& context) {
+QueryData genPythonPackagesImpl(QueryContext& context, Logger& logger) {
   QueryData results;
   std::set<std::string> paths;
   if (context.constraints.count("directory") > 0 &&
@@ -137,7 +147,7 @@ QueryData genPythonPackages(QueryContext& context) {
     }
   }
   for (const auto& key : paths) {
-    genSiteDirectories(key, results);
+    genSiteDirectories(key, results, logger);
   }
 
   if (isPlatform(PlatformType::TYPE_OSX)) {
@@ -156,20 +166,30 @@ QueryData genPythonPackages(QueryContext& context) {
 
         auto complete = version + "lib/python" +
                         version_path.filename().string() + "/site-packages";
-        genSiteDirectories(complete, results);
+        genSiteDirectories(complete, results, logger);
       }
     }
   } else if (isPlatform(PlatformType::TYPE_WINDOWS)) {
     // Enumerate any system installed python packages
     auto installPathKey = "HKEY_LOCAL_MACHINE\\" + kWinPythonInstallKey;
-    genWinPythonPackages(installPathKey, results);
+    genWinPythonPackages(installPathKey, results, logger);
 
     // Enumerate any user installed python packages
     installPathKey = "HKEY_USERS\\%\\" + kWinPythonInstallKey;
-    genWinPythonPackages(installPathKey, results);
+    genWinPythonPackages(installPathKey, results, logger);
   }
 
   return results;
+}
+
+QueryData genPythonPackages(QueryContext& context) {
+  if (hasNamespaceConstraint(context)) {
+    return generateInNamespace(
+        context, "python_packages", genPythonPackagesImpl);
+  } else {
+    GLOGLogger logger;
+    return genPythonPackagesImpl(context, logger);
+  }
 }
 } // namespace tables
 } // namespace osquery

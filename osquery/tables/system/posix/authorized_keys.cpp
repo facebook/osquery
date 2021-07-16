@@ -17,6 +17,8 @@
 #include <osquery/tables/system/system_utils.h>
 #include <osquery/utils/conversions/split.h>
 #include <osquery/utils/system/system.h>
+#include <osquery/worker/ipc/platform_table_container_ipc.h>
+#include <osquery/worker/logging/glog/glog_logger.h>
 
 namespace osquery {
 namespace tables {
@@ -27,14 +29,19 @@ const std::vector<std::string> kSSHAuthorizedkeys = {".ssh/authorized_keys",
 void genSSHkeysForUser(const std::string& uid,
                        const std::string& gid,
                        const std::string& directory,
-                       QueryData& results) {
+                       QueryData& results,
+                       Logger& logger) {
   for (const auto& kfile : kSSHAuthorizedkeys) {
     boost::filesystem::path keys_file = directory;
     keys_file /= kfile;
 
     std::string keys_content;
-    if (!forensicReadFile(keys_file, keys_content).ok()) {
+
+    auto s = forensicReadFile(keys_file, keys_content, false, false);
+    if (!s.ok()) {
       // Cannot read a specific keys file.
+      logger.log(google::GLOG_WARNING, s.getMessage());
+      logger.vlog(1, s.getMessage());
       continue;
     }
     // Protocol 1 public key consist of: options, bits, exponent, modulus,
@@ -43,13 +50,14 @@ void genSSHkeysForUser(const std::string& uid,
     for (const auto& line : split(keys_content, "\n")) {
       if (!line.empty() && line[0] != '#') {
         Row r = {{"uid", uid}, {"key", line}, {"key_file", keys_file.string()}};
+        r["pid_with_namespace"] = "0";
         results.push_back(r);
       }
     }
   }
 }
 
-QueryData getAuthorizedKeys(QueryContext& context) {
+QueryData getAuthorizedKeysImpl(QueryContext& context, Logger& logger) {
   QueryData results;
 
   // Iterate over each user
@@ -59,11 +67,22 @@ QueryData getAuthorizedKeys(QueryContext& context) {
     auto gid = row.find("gid");
     auto directory = row.find("directory");
     if (uid != row.end() && gid != row.end() && directory != row.end()) {
-      genSSHkeysForUser(uid->second, gid->second, directory->second, results);
+      genSSHkeysForUser(
+          uid->second, gid->second, directory->second, results, logger);
     }
   }
 
   return results;
+}
+
+QueryData getAuthorizedKeys(QueryContext& context) {
+  if (hasNamespaceConstraint(context)) {
+    return generateInNamespace(
+        context, "authorized_keys", getAuthorizedKeysImpl);
+  } else {
+    GLOGLogger logger;
+    return getAuthorizedKeysImpl(context, logger);
+  }
 }
 }
 }

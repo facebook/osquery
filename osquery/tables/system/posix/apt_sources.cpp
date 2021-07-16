@@ -16,6 +16,8 @@
 #include <osquery/utils/conversions/join.h>
 #include <osquery/utils/conversions/split.h>
 #include <osquery/utils/system/system.h>
+#include <osquery/worker/ipc/platform_table_container_ipc.h>
+#include <osquery/worker/logging/glog/glog_logger.h>
 
 namespace osquery {
 namespace tables {
@@ -119,7 +121,8 @@ std::string getCacheFilename(const std::vector<std::string>& cache_file) {
 
 void genAptUrl(const std::string& source,
                const std::string& line,
-               QueryData& results) {
+               QueryData& results,
+               Logger& logger) {
   AptSource apt_source;
   if (!parseAptSourceLine(line, apt_source).ok()) {
     return;
@@ -140,7 +143,10 @@ void genAptUrl(const std::string& source,
   }
 
   std::string content;
-  if (!readFile(cache_files[0], content)) {
+  auto s = readFile(cache_files[0], content, 0, false, false, false, false);
+  if (!s.ok()) {
+    logger.log(google::GLOG_WARNING, s.getMessage());
+    logger.vlog(1, s.getMessage());
     return;
   }
 
@@ -169,13 +175,19 @@ void genAptUrl(const std::string& source,
       r["architectures"] = fields[1];
     }
   }
-
+  r["pid_with_namespace"] = "0";
   results.push_back(r);
 }
 
-static void genAptSource(const std::string& source, QueryData& results) {
+static void genAptSource(const std::string& source,
+                         QueryData& results,
+                         Logger& logger) {
   std::string content;
-  if (!readFile(source, content)) {
+
+  auto s = readFile(source, content, 0, false, false, false, false);
+  if (!s.ok()) {
+    logger.log(google::GLOG_WARNING, s.getMessage());
+    logger.vlog(1, s.getMessage());
     return;
   }
 
@@ -184,11 +196,11 @@ static void genAptSource(const std::string& source, QueryData& results) {
     if (line.empty()) {
       continue;
     }
-    genAptUrl(source, line, results);
+    genAptUrl(source, line, results, logger);
   }
 }
 
-QueryData genAptSrcs(QueryContext& context) {
+QueryData genAptSrcsImpl(QueryContext& context, Logger& logger) {
   QueryData results;
 
   // We are going to read a few files.
@@ -200,15 +212,24 @@ QueryData genAptSrcs(QueryContext& context) {
   sources.push_back("/etc/apt/sources.list");
   if (!resolveFilePattern(
           "/etc/apt/sources.list.d/%.list", sources, GLOB_FILES)) {
-    VLOG(1) << "Cannot resolve apt sources /etc/apt/sources.list.d";
+    logger.vlog(1, "Cannot resolve apt sources /etc/apt/sources.list.d");
     return results;
   }
 
   for (const auto& source : sources) {
-    genAptSource(source, results);
+    genAptSource(source, results, logger);
   }
 
   return results;
+}
+
+QueryData genAptSrcs(QueryContext& context) {
+  if (hasNamespaceConstraint(context)) {
+    return generateInNamespace(context, "apt_sources", genAptSrcsImpl);
+  } else {
+    GLOGLogger logger;
+    return genAptSrcsImpl(context, logger);
+  }
 }
 } // namespace tables
 } // namespace osquery

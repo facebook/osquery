@@ -7,4 +7,7 @@ schema([
     Column("gpgcheck", TEXT, "Whether packages are GPG checked"),
     Column("gpgkey", TEXT, "URL to GPG key"),
 ])
+extended_schema(LINUX, [
+    Column("pid_with_namespace", INTEGER, "Pids that contain a namespace", additional=True, hidden=True),
+])
 implementation("system/yum_sources@genYumSrcs")

@@ -8,6 +8,9 @@ schema([
     Column("key_type", TEXT, "The type of the private key. One of [rsa, dsa, dh, ec, hmac, cmac], or the empty string."),
     ForeignKey(column="uid", table="users"),
 ])
+extended_schema(LINUX, [
+    Column("pid_with_namespace", INTEGER, "Pids that contain a namespace", additional=True, hidden=True),
+])
 attributes(user_data=True, no_pkey=True)
 implementation("user_ssh_keys@getUserSshKeys")
 examples([

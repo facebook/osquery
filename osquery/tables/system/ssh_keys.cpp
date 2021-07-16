@@ -17,6 +17,8 @@
 #include <osquery/tables/system/system_utils.h>
 #include <osquery/utils/scope_guard.h>
 #include <osquery/utils/system/system.h>
+#include <osquery/worker/ipc/platform_table_container_ipc.h>
+#include <osquery/worker/logging/glog/glog_logger.h>
 
 #include <boost/algorithm/string.hpp>
 #include <openssl/bio.h>
@@ -130,7 +132,8 @@ std::string keyTypeAsString(int key_type) {
 void genSSHkeyForHosts(const std::string& uid,
                        const std::string& gid,
                        const std::string& directory,
-                       QueryData& results) {
+                       QueryData& results,
+                       Logger& logger) {
   // Get list of files in directory
   boost::filesystem::path keys_dir = directory;
   keys_dir /= kSSHUserKeysDir;
@@ -143,8 +146,11 @@ void genSSHkeyForHosts(const std::string& uid,
   // Go through each file
   for (const auto& kfile : files_list) {
     std::string keys_content;
-    if (!forensicReadFile(kfile, keys_content).ok()) {
+    auto s = forensicReadFile(kfile, keys_content, false, false);
+    if (!s.ok()) {
       // Cannot read a specific keys file.
+      logger.log(google::GLOG_WARNING, s.getMessage());
+      logger.vlog(1, s.getMessage());
       continue;
     }
     int key_type;
@@ -152,6 +158,7 @@ void genSSHkeyForHosts(const std::string& uid,
     bool parsed = parsePrivateKey(keys_content, key_type, encrypted);
     if (parsed) {
       Row r;
+      r["pid_with_namespace"] = "0";
       r["uid"] = uid;
       r["path"] = kfile;
       r["encrypted"] = encrypted ? "1" : "0";
@@ -161,7 +168,7 @@ void genSSHkeyForHosts(const std::string& uid,
   }
 }
 
-QueryData getUserSshKeys(QueryContext& context) {
+QueryData getUserSshKeysImpl(QueryContext& context, Logger& logger) {
   QueryData results;
 
   // Iterate over each user
@@ -171,11 +178,21 @@ QueryData getUserSshKeys(QueryContext& context) {
     auto gid = row.find("gid");
     auto directory = row.find("directory");
     if (uid != row.end() && gid != row.end() && directory != row.end()) {
-      genSSHkeyForHosts(uid->second, gid->second, directory->second, results);
+      genSSHkeyForHosts(
+          uid->second, gid->second, directory->second, results, logger);
     }
   }
 
   return results;
+}
+
+QueryData getUserSshKeys(QueryContext& context) {
+  if (hasNamespaceConstraint(context)) {
+    return generateInNamespace(context, "user_ssh_keys", getUserSshKeysImpl);
+  } else {
+    GLOGLogger logger;
+    return getUserSshKeysImpl(context, logger);
+  }
 }
 } // namespace tables
 } // namespace osquery

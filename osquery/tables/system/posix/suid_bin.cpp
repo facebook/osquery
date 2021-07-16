@@ -16,6 +16,8 @@
 #include <osquery/core/tables.h>
 #include <osquery/filesystem/filesystem.h>
 #include <osquery/logger/logger.h>
+#include <osquery/worker/ipc/platform_table_container_ipc.h>
+#include <osquery/worker/logging/glog/glog_logger.h>
 
 namespace fs = boost::filesystem;
 
@@ -66,7 +68,7 @@ Status genBin(const fs::path& path, int perms, QueryData& results) {
   if ((perms & 02000) == 02000) {
     r["permissions"] += "G";
   }
-
+  r["pid_with_namespace"] = "0";
   results.push_back(r);
   return Status::success();
 }
@@ -82,7 +84,9 @@ bool isSuidBin(const fs::path& path, int perms) {
   return false;
 }
 
-void genSuidBinsFromPath(const std::string& path, QueryData& results) {
+void genSuidBinsFromPath(const std::string& path,
+                         QueryData& results,
+                         Logger& logger) {
   if (!pathExists(path).ok()) {
     // Creating an iterator on a missing path will except.
     return;
@@ -106,7 +110,7 @@ void genSuidBinsFromPath(const std::string& path, QueryData& results) {
 
       ++it;
     } catch (fs::filesystem_error& e) {
-      VLOG(1) << "Cannot read binary from " << subpath;
+      logger.vlog(1, "Cannot read binary from " + subpath.string());
       it.no_push();
       // Try to recover, otherwise break.
       try {
@@ -118,15 +122,24 @@ void genSuidBinsFromPath(const std::string& path, QueryData& results) {
   }
 }
 
-QueryData genSuidBin(QueryContext& context) {
+QueryData genSuidBinImpl(QueryContext& context, Logger& logger) {
   QueryData results;
 
   // Todo: add hidden column to select on that triggers non-std path searches.
   for (const auto& path : kBinarySearchPaths) {
-    genSuidBinsFromPath(path, results);
+    genSuidBinsFromPath(path, results, logger);
   }
 
   return results;
+}
+
+QueryData genSuidBin(QueryContext& context) {
+  if (hasNamespaceConstraint(context)) {
+    return generateInNamespace(context, "suid_bin", genSuidBinImpl);
+  } else {
+    GLOGLogger logger;
+    return genSuidBinImpl(context, logger);
+  }
 }
 }
 }

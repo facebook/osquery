@@ -113,7 +113,8 @@ Status readFile(const fs::path& path,
                 bool dry_run,
                 bool preserve_time,
                 std::function<void(std::string& buffer, size_t size)> predicate,
-                bool blocking) {
+                bool blocking,
+                bool log) {
   OpenReadableFile handle(path, blocking);
 
   if (handle.fd == nullptr || !handle.fd->isValid()) {
@@ -131,10 +132,15 @@ Status readFile(const fs::path& path,
   auto read_max = static_cast<off_t>(FLAGS_read_max);
   if (file_size > read_max) {
     if (!dry_run) {
-      LOG(WARNING) << "Cannot read file that exceeds size limit: "
-                   << path.string();
-      VLOG(1) << "Cannot read " << path.string()
-              << " size exceeds limit: " << file_size << " > " << read_max;
+      auto s =
+          Status::failure("Cannot read " + path.string() +
+                          " size exceeds limit: " + std::to_string(file_size) +
+                          " > " + std::to_string(read_max));
+      if (log) {
+        LOG(WARNING) << s.getMessage();
+        VLOG(1) << s.getMessage();
+      }
+      return s;
     }
     return Status::failure("File exceeds read limits");
   }
@@ -197,7 +203,8 @@ Status readFile(const fs::path& path,
                 size_t size,
                 bool dry_run,
                 bool preserve_time,
-                bool blocking) {
+                bool blocking,
+                bool log) {
   return readFile(path,
                   size,
                   4096,
@@ -210,7 +217,8 @@ Status readFile(const fs::path& path,
                       content += buffer.substr(0, _size);
                     }
                   }),
-                  blocking);
+                  blocking,
+                  log);
 }
 
 Status readFile(const fs::path& path, bool blocking) {
@@ -220,8 +228,9 @@ Status readFile(const fs::path& path, bool blocking) {
 
 Status forensicReadFile(const fs::path& path,
                         std::string& content,
-                        bool blocking) {
-  return readFile(path, content, 0, false, true, blocking);
+                        bool blocking,
+                        bool log) {
+  return readFile(path, content, 0, false, true, blocking, log);
 }
 
 Status isWritable(const fs::path& path, bool effective) {
@@ -307,11 +316,11 @@ static bool checkForLoops(std::set<int>& dsym_inos, std::string path) {
     return false;
   }
 
-  if (dsym_inos.find(d_stat.st_ino) == dsym_inos.end()) {
-    dsym_inos.insert(d_stat.st_ino);
-  } else {
-    VLOG(1) << "Symlink loop detected. Ignoring: " << path;
+  if (dsym_inos.find(d_stat.st_ino) != dsym_inos.end()) {
+    // Symlink loop detected. Ignoring
     return true;
+  } else {
+    dsym_inos.insert(d_stat.st_ino);
   }
   return false;
 }

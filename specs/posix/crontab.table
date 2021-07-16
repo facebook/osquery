@@ -10,6 +10,9 @@ schema([
     Column("command", TEXT, "Raw command string"),
     Column("path", TEXT, "File parsed"),
 ])
+extended_schema(LINUX, [
+    Column("pid_with_namespace", INTEGER, "Pids that contain a namespace", additional=True, hidden=True),
+])
 attributes(cacheable=True)
 implementation("crontab@genCronTab")
 fuzz_paths([
