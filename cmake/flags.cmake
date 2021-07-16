@@ -180,6 +180,7 @@ function(setupBuildFlags)
         "-framework Security"
         "-framework ServiceManagement"
         "-framework SystemConfiguration"
+        "-weak_framework OSLog"
       )
 
       set(osquery_macos_common_defines

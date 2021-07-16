@@ -157,6 +157,7 @@ function(generateOsqueryTablesSystemSystemtable)
       darwin/system_extensions.mm
       darwin/system_info.cpp
       darwin/time_machine.cpp
+      darwin/unified_log.mm
       darwin/usb_devices.cpp
       darwin/user_groups.mm
       darwin/virtual_memory_info.cpp
