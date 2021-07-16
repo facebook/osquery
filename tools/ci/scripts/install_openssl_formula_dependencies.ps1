@@ -11,8 +11,7 @@
 # Download and extract Strawberry Perl
 #
 
-# It does not seem that they have HTTPS: https://github.com/StrawberryPerl/strawberryperl.com/issues/11
-(New-Object System.Net.WebClient).DownloadFile("http://strawberryperl.com/download/5.30.0.1/strawberry-perl-5.30.0.1-64bit.zip", "$env:TEMP\strawberry_perl.zip")
+(New-Object System.Net.WebClient).DownloadFile("https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit.zip", "$env:TEMP\strawberry_perl.zip")
 
 # Prefer 7zip if present, which is faster
 if (Get-Command 7z -errorAction SilentlyContinue)
