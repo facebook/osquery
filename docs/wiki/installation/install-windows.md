@@ -107,6 +107,6 @@ The same operation can be performed using the osquery manager (`C:\Program Files
 
 The manifest file path can also be overridden using the `-welManifestPath` switch.
 
-To verify that everything has been configured correctly, open the Event Viewer and search for the **osquery** folder under `Applications and Services Logs/Facebook/osquery`.
+To verify that everything has been configured correctly, open the Event Viewer and search for the **osquery** folder under `Applications and Services Logs/osquery/osquery`.
 
 To instruct osquery to use the channel you just created, change the configuration file to use the **windows_event_log** logger plugin.

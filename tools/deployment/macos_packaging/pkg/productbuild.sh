@@ -92,7 +92,7 @@ function main() {
   parse_args $@
 
   # Overwrite the package identifier.
-  PKG_IDENTIFIER="com.facebook.osquery"
+  PKG_IDENTIFIER="com.osquery.osquery"
 
   if [[ ! -z "$PKG_DISTRIBUTION" ]]; then
     distribution_build

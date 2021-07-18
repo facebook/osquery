@@ -662,7 +662,7 @@ Consider the default recipe:
 
 ```ruby
 # Domain used by the macOS LaunchDaemon.
-domain = 'com.facebook.osquery.osqueryd'
+domain = 'com.osquery.osqueryd'
 config_path = '/var/osquery/osquery.conf'
 pid_path = '/var/osquery/osquery.pid'
 flagfile = '/var/osquery/osquery.flags'
@@ -740,7 +740,7 @@ And the following files/templates used by the recipe:
 </plist>
 ```
 
-**files/default/com.facebook.osquery.osqueryd.conf**
+**files/default/com.osquery.osqueryd.conf**
 
 ```shell
 # logfilename                         [owner:group]  mode count size   when  flags [/pid_file] [sig_num]

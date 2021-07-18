@@ -11,7 +11,7 @@ Each osquery tag (release) builds a macOS package: [osquery.io/downloads](https:
 The default package creates the following structure:
 
 ```sh
-/private/var/osquery/com.facebook.osqueryd.plist
+/private/var/osquery/com.osquery.osqueryd.plist
 /private/var/osquery/osquery.example.conf
 /private/var/log/osquery/
 /private/var/osquery/lenses/{*}.aug
@@ -36,8 +36,8 @@ sudo osqueryctl start
 
 # Or, install the example config and launch daemon yourself:
 sudo cp /var/osquery/osquery.example.conf /var/osquery/osquery.conf
-sudo cp /var/osquery/com.facebook.osqueryd.plist /Library/LaunchDaemons
-sudo launchctl load /Library/LaunchDaemons/com.facebook.osqueryd.plist
+sudo cp /var/osquery/com.osquery.osqueryd.plist /Library/LaunchDaemons
+sudo launchctl load /Library/LaunchDaemons/com.osquery.osqueryd.plist
 ```
 
 ### Removing osquery
@@ -45,16 +45,16 @@ sudo launchctl load /Library/LaunchDaemons/com.facebook.osqueryd.plist
 To remove osquery from a macOS system, run the following commands:
 
 ```sh
-# Unload and remove com.facebook.osquery.plist launchdaemon
-sudo launchctl unload /Library/LaunchDaemons/com.facebook.osqueryd.plist
-sudo rm /Library/LaunchDaemons/com.facebook.osqueryd.plist
+# Unload and remove com.osquery.osqueryd.plist launchdaemon
+sudo launchctl unload /Library/LaunchDaemons/com.osquery.osqueryd.plist
+sudo rm /Library/LaunchDaemons/com.osquery.osqueryd.plist
 
 # Remove files/directories created by osquery installer pkg
 sudo rm -rf /private/var/log/osquery
 sudo rm -rf /private/var/osquery
 sudo rm /usr/local/bin/osquery*
 
-sudo pkgutil --forget com.facebook.osquery
+sudo pkgutil --forget com.osquery.osquery
 ```
 
 ## Running osquery

@@ -7,7 +7,7 @@
   <key>Disabled</key>
   <false/>
   <key>Label</key>
-  <string>com.facebook.osqueryd</string>
+  <string>com.osquery.osqueryd</string>
   <key>ProgramArguments</key>
   <array>
     <string>/usr/local/bin/osqueryd</string>

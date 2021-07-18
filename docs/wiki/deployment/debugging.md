@@ -154,7 +154,7 @@ $ sudo osqueryctl start
 $ sudo osqueryctl config-check
 E0118 17:10:09.520731 1913696256 init.cpp:421] [Ref #1629] osqueryd initialize failed: Could not open RocksDB
 $ sudo osqueryctl status
-com.facebook.osqueryd is running. pid: 81943
+com.osquery.osqueryd is running. pid: 81943
 $ sudo osqueryctl stop
 $ sudo osqueryctl config-check || echo 'config has an error'
 ```

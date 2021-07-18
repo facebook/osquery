@@ -103,12 +103,6 @@ set(third_party_source_list "source;formula")
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" CACHE STRING "A list of paths containing CMake module files")
 set(OSQUERY_THIRD_PARTY_SOURCE "${third_party_source_list}" CACHE STRING "Sources used to acquire third-party dependencies")
 
-# This is the default S3 storage used by Facebook to store 3rd party dependencies; it
-# is provided here as a configuration option
-if("${THIRD_PARTY_REPOSITORY_URL}" STREQUAL "")
-  set(THIRD_PARTY_REPOSITORY_URL "https://s3.amazonaws.com/osquery-packages")
-endif()
-
 detectOsqueryVersion()
 
 message(STATUS "osquery version: ${OSQUERY_VERSION_INTERNAL}")
