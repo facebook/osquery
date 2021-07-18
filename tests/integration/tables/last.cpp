@@ -37,6 +37,7 @@ TEST_F(last, test_sanity) {
       {"tty", NormalType},
       {"pid", NonNegativeInt},
       {"type", IntMinMaxCheck(7, 8)},
+      {"type_name", NormalType},
       {"time", NonNegativeInt},
       {"host", NormalType},
   };

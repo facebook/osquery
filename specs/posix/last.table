@@ -5,6 +5,7 @@ schema([
     Column("tty", TEXT, "Entry terminal"),
     Column("pid", INTEGER, "Process (or thread) ID"),
     Column("type", INTEGER, "Entry type, according to ut_type types (utmp.h)"),
+    Column("type_name", TEXT, "Entry type name, according to ut_type types (utmp.h)"),
     Column("time", INTEGER, "Entry timestamp"),
     Column("host", TEXT, "Entry hostname"),
 ])
